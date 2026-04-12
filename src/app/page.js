@@ -97,8 +97,7 @@ export default function LandingPage() {
 
         <div className={styles.hero_content}>
           <div className={styles.hero_badge}>
-            <Globe size={16} />
-            <span>🇲🇦 Plateforme 100% féminine & sécurisée</span>
+            <span>Plateforme 100% féminine & sécurisée</span>
           </div>
           <h1 className={styles.hero_title}>
             Voyagez entre<br />
