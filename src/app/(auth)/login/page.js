@@ -20,7 +20,7 @@ export default function LoginPage() {
         </div>
         <div className={styles.auth_brand}>
           <Link href="/" className={styles.auth_logo}>
-            <img src="/logo.png" alt="Logo" width={48} height={48} />
+            <img src="/logo.png" alt="Logo" width={64} height={64} />
             <span>Maghribia <strong>Msafra</strong></span>
           </Link>
           <h2>Bienvenue ! 👋</h2>

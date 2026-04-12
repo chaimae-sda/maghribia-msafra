@@ -31,7 +31,7 @@ export default function Navbar() {
         {/* Logo */}
         <Link href="/" className={styles.logo}>
           <div className={styles.logo_icon}>
-            <img src="/logo.png" alt="Maghribia Msafra" width={36} height={36} />
+            <img src="/logo.png" alt="Maghribia Msafra" width={48} height={48} />
           </div>
           <span className={styles.logo_text}>
             Maghribia <span className={styles.logo_accent}>Msafra</span>

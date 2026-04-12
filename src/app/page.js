@@ -83,7 +83,7 @@ export default function LandingPage() {
 
         <nav className={styles.hero_nav}>
           <Link href="/" className={styles.hero_logo}>
-            <img src="/logo.png" alt="Logo" width={40} height={40} />
+            <img src="/logo.png" alt="Logo" width={56} height={56} />
             <span>Maghribia <strong>Msafra</strong></span>
           </Link>
           <div className={styles.hero_nav_right}>
@@ -238,7 +238,7 @@ export default function LandingPage() {
         <div className={styles.footer_inner}>
           <div className={styles.footer_brand}>
             <div className={styles.footer_logo}>
-              <img src="/logo.png" alt="Logo" width={32} height={32} />
+              <img src="/logo.png" alt="Logo" width={48} height={48} />
               <span>Maghribia Msafra</span>
             </div>
             <p>La première plateforme de voyage au féminin au Maroc. Sécurisée, solidaire, authentique.</p>
