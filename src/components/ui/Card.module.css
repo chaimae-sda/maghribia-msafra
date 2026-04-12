@@ -1,0 +1,50 @@
+.card {
+  background: var(--bg-card);
+  border-radius: var(--radius-xl);
+  border: 1px solid var(--border-light);
+  overflow: hidden;
+  transition: all var(--duration-normal) var(--ease-out);
+}
+
+.card_padded {
+  padding: var(--space-6);
+}
+
+.card_hover:hover {
+  box-shadow: var(--shadow-lg);
+  transform: translateY(-2px);
+  border-color: var(--border-medium);
+}
+
+/* Variants */
+.card_default {
+  box-shadow: var(--shadow-sm);
+}
+
+.card_elevated {
+  box-shadow: var(--shadow-md);
+}
+
+.card_glass {
+  background: rgba(255, 255, 255, 0.7);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.5);
+}
+
+.card_dark {
+  background: var(--night-light);
+  border-color: rgba(255,255,255,0.08);
+  color: var(--cream);
+}
+
+.card_moroccan {
+  box-shadow: var(--shadow-sm);
+  border-image: var(--gradient-moroccan) 1;
+  border-width: 2px;
+  border-style: solid;
+}
+
+.card_arch {
+  border-radius: var(--radius-2xl) var(--radius-2xl) var(--radius-xl) var(--radius-xl);
+}

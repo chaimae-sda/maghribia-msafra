@@ -1,0 +1,65 @@
+.shop { max-width: 960px; margin: 0 auto; }
+.header { margin-bottom: var(--space-6); }
+.header h1 { font-size: var(--text-3xl); font-weight: var(--font-bold); }
+.header p { color: var(--text-secondary); margin-top: var(--space-1); }
+
+.trustBanner { display: flex; gap: var(--space-6); padding: var(--space-4) var(--space-6); background: rgba(42,157,143,0.06); border: 1px solid rgba(42,157,143,0.15); border-radius: var(--radius-xl); margin-bottom: var(--space-6); }
+.trustItem { display: flex; align-items: center; gap: var(--space-2); font-size: var(--text-sm); font-weight: var(--font-medium); color: var(--jade-dark); }
+
+.tripGrid { display: flex; flex-direction: column; gap: var(--space-6); }
+.tripCard { background: var(--bg-card); border-radius: var(--radius-xl); border: 1px solid var(--border-light); overflow: hidden; display: grid; grid-template-columns: 360px 1fr; transition: all var(--duration-normal) var(--ease-out); animation: fadeInUp 0.4s var(--ease-out); }
+.tripCard:hover { box-shadow: var(--shadow-lg); transform: translateY(-2px); }
+.tripCard_image { position: relative; }
+.tripCard_image img { width: 100%; height: 100%; object-fit: cover; transition: transform var(--duration-slow); }
+.tripCard:hover .tripCard_image img { transform: scale(1.05); }
+.tripCard_badges { position: absolute; top: var(--space-3); left: var(--space-3); display: flex; gap: var(--space-2); }
+.tripCard_fav { position: absolute; top: var(--space-3); right: var(--space-3); width: 36px; height: 36px; border-radius: var(--radius-full); background: rgba(255,255,255,0.9); border: none; display: flex; align-items: center; justify-content: center; cursor: pointer; color: var(--text-muted); transition: all var(--duration-fast); }
+.tripCard_fav:hover { color: var(--rose); transform: scale(1.1); }
+.tripCard_discount { position: absolute; bottom: var(--space-3); left: var(--space-3); display: flex; align-items: center; gap: var(--space-1); background: var(--rose); color: white; font-size: var(--text-sm); font-weight: var(--font-bold); padding: var(--space-1) var(--space-3); border-radius: var(--radius-full); }
+
+.tripCard_body { padding: var(--space-5); display: flex; flex-direction: column; gap: var(--space-3); }
+.tripCard_title { font-size: var(--text-xl); font-weight: var(--font-bold); color: var(--text-primary); }
+.tripCard_meta { display: flex; flex-direction: column; gap: var(--space-1); }
+.tripCard_meta span { display: flex; align-items: center; gap: var(--space-2); font-size: var(--text-sm); color: var(--text-secondary); }
+.tripCard_desc { font-size: var(--text-sm); color: var(--text-secondary); line-height: 1.6; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.tripCard_includes { display: flex; flex-wrap: wrap; gap: var(--space-2); }
+.include_tag { font-size: var(--text-xs); padding: var(--space-1) var(--space-3); background: rgba(96,98,255,0.06); border-radius: var(--radius-full); color: var(--majorelle); }
+
+.tripCard_footer { display: flex; justify-content: space-between; align-items: flex-end; padding-top: var(--space-3); border-top: 1px solid var(--border-light); }
+.tripCard_pricing { }
+.price_main { display: flex; align-items: baseline; }
+.price_amount { font-size: var(--text-2xl); font-weight: var(--font-bold); color: var(--terracotta); }
+.price_currency { font-size: var(--text-base); font-weight: var(--font-semibold); color: var(--terracotta); }
+.price_original { font-size: var(--text-sm); color: var(--text-muted); text-decoration: line-through; }
+.price_person { font-size: var(--text-xs); color: var(--text-muted); }
+.tripCard_right { text-align: right; }
+.tripCard_rating { display: flex; align-items: center; gap: var(--space-1); font-size: var(--text-sm); margin-bottom: var(--space-1); }
+.tripCard_rating strong { color: var(--text-primary); }
+.tripCard_rating span { color: var(--text-muted); }
+.tripCard_spots { display: flex; align-items: center; gap: var(--space-1); font-size: var(--text-xs); color: var(--rose); font-weight: var(--font-medium); }
+.tripCard_organizer { display: flex; align-items: center; gap: var(--space-2); font-size: var(--text-sm); color: var(--text-secondary); }
+.verified { color: var(--jade); }
+
+/* Modal */
+.modal_overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 200; display: flex; align-items: center; justify-content: center; padding: var(--space-4); animation: fadeIn var(--duration-fast); }
+.modal { background: var(--bg-card); border-radius: var(--radius-2xl); padding: var(--space-8); max-width: 480px; width: 100%; animation: scaleIn var(--duration-normal) var(--ease-out); }
+.modal h2 { font-size: var(--text-2xl); margin-bottom: var(--space-5); }
+.payment_summary { background: var(--bg-primary); border-radius: var(--radius-lg); padding: var(--space-5); margin-bottom: var(--space-5); }
+.payment_summary h3 { font-size: var(--text-base); font-weight: var(--font-semibold); margin-bottom: var(--space-4); }
+.payment_row { display: flex; justify-content: space-between; padding: var(--space-2) 0; font-size: var(--text-sm); color: var(--text-secondary); }
+.payment_total { border-top: 2px solid var(--border-medium); padding-top: var(--space-3); margin-top: var(--space-2); font-size: var(--text-base); }
+.payment_total span, .payment_total strong { color: var(--text-primary); }
+.payment_method { margin-bottom: var(--space-5); }
+.payment_method h4 { font-size: var(--text-sm); font-weight: var(--font-semibold); margin-bottom: var(--space-3); }
+.payment_options { display: flex; flex-direction: column; gap: var(--space-2); }
+.payment_option { display: flex; align-items: center; gap: var(--space-3); padding: var(--space-3) var(--space-4); border: 1px solid var(--border-light); border-radius: var(--radius-lg); font-size: var(--text-sm); cursor: pointer; transition: border-color var(--duration-fast); }
+.payment_option:hover { border-color: var(--majorelle); }
+.payment_option input[type="radio"] { accent-color: var(--majorelle); }
+.payment_escrow { display: flex; gap: var(--space-3); padding: var(--space-4); background: rgba(42,157,143,0.06); border-radius: var(--radius-lg); margin-bottom: var(--space-5); font-size: var(--text-xs); color: var(--jade-dark); line-height: 1.5; align-items: flex-start; }
+.modal_actions { display: flex; flex-direction: column; gap: var(--space-3); }
+
+@media (max-width: 768px) {
+  .tripCard { grid-template-columns: 1fr; }
+  .tripCard_image { height: 200px; }
+  .trustBanner { flex-direction: column; gap: var(--space-3); }
+}

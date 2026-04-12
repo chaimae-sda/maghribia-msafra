@@ -1,0 +1,77 @@
+.avatar {
+  position: relative;
+  display: inline-flex;
+  flex-shrink: 0;
+  border-radius: var(--radius-full);
+  overflow: visible;
+}
+
+.avatar_img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: var(--radius-full);
+}
+
+.avatar_fallback {
+  width: 100%;
+  height: 100%;
+  border-radius: var(--radius-full);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-weight: var(--font-semibold);
+  text-transform: uppercase;
+}
+
+/* Sizes */
+.avatar_xs { width: 28px; height: 28px; font-size: var(--text-xs); }
+.avatar_sm { width: 36px; height: 36px; font-size: var(--text-sm); }
+.avatar_md { width: 44px; height: 44px; font-size: var(--text-base); }
+.avatar_lg { width: 56px; height: 56px; font-size: var(--text-lg); }
+.avatar_xl { width: 72px; height: 72px; font-size: var(--text-xl); }
+.avatar_2xl { width: 96px; height: 96px; font-size: var(--text-2xl); }
+
+/* Status */
+.avatar_status {
+  position: absolute;
+  bottom: 1px;
+  right: 1px;
+  width: 12px;
+  height: 12px;
+  border-radius: var(--radius-full);
+  border: 2px solid var(--bg-card);
+  z-index: 1;
+}
+
+.avatar_status_online { background: var(--jade); }
+.avatar_status_offline { background: var(--silver); }
+.avatar_status_busy { background: var(--terracotta); }
+
+/* Badge */
+.avatar_badge {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  background: var(--majorelle);
+  color: white;
+  font-size: 10px;
+  font-weight: var(--font-bold);
+  padding: 2px 6px;
+  border-radius: var(--radius-full);
+  border: 2px solid var(--bg-card);
+  z-index: 1;
+}
+
+/* Ring for stories */
+.avatar_ring {
+  padding: 3px;
+  background: var(--gradient-moroccan);
+  border-radius: var(--radius-full);
+}
+
+.avatar_ring .avatar_img,
+.avatar_ring .avatar_fallback {
+  border: 2px solid var(--bg-card);
+}

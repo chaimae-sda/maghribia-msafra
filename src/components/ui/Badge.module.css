@@ -1,0 +1,74 @@
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  font-weight: var(--font-medium);
+  border-radius: var(--radius-full);
+  white-space: nowrap;
+}
+
+/* Sizes */
+.badge_sm {
+  font-size: var(--text-xs);
+  padding: 2px 8px;
+}
+
+.badge_md {
+  font-size: var(--text-sm);
+  padding: 4px 12px;
+}
+
+/* Variants */
+.badge_default {
+  background: var(--pearl);
+  color: var(--slate);
+}
+
+.badge_majorelle {
+  background: rgba(96,98,255,0.12);
+  color: var(--majorelle);
+}
+
+.badge_terracotta {
+  background: rgba(199,91,57,0.12);
+  color: var(--terracotta);
+}
+
+.badge_saffron {
+  background: rgba(232,168,56,0.12);
+  color: var(--saffron-dark);
+}
+
+.badge_jade {
+  background: rgba(42,157,143,0.12);
+  color: var(--jade-dark);
+}
+
+.badge_rose {
+  background: rgba(232,86,127,0.12);
+  color: var(--rose);
+}
+
+.badge_verified {
+  background: linear-gradient(135deg, rgba(42,157,143,0.15), rgba(96,98,255,0.15));
+  color: var(--jade-dark);
+  font-weight: var(--font-semibold);
+}
+
+.badge_gold {
+  background: linear-gradient(135deg, #F0C060 0%, #E8A838 100%);
+  color: #6B4400;
+  font-weight: var(--font-semibold);
+}
+
+.badge_dot {
+  width: 6px;
+  height: 6px;
+  border-radius: var(--radius-full);
+  background: currentColor;
+}
+
+.badge_icon {
+  display: inline-flex;
+  font-size: 0.85em;
+}

@@ -1,0 +1,321 @@
+/* ========================================
+   MAGHRIBIA MSAFRA — Design System "Zellige"
+   Inspired by Moroccan craftsmanship
+   ======================================== */
+
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+Arabic:wght@300;400;500;600;700&display=swap');
+
+/* ---- CSS Reset ---- */
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  scroll-behavior: smooth;
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  font-family: 'Outfit', 'Noto Sans Arabic', sans-serif;
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  line-height: 1.6;
+  overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+img, video {
+  max-width: 100%;
+  height: auto;
+  display: block;
+}
+
+a {
+  text-decoration: none;
+  color: inherit;
+}
+
+button {
+  cursor: pointer;
+  border: none;
+  background: none;
+  font-family: inherit;
+}
+
+input, textarea, select {
+  font-family: inherit;
+  font-size: inherit;
+}
+
+ul, ol {
+  list-style: none;
+}
+
+/* ---- Design Tokens ---- */
+:root {
+  /* Colors — Moroccan Palette */
+  --majorelle: #6062FF;
+  --majorelle-light: #8B8DFF;
+  --majorelle-dark: #4446CC;
+  --terracotta: #C75B39;
+  --terracotta-light: #E07856;
+  --terracotta-dark: #9E4429;
+  --saffron: #E8A838;
+  --saffron-light: #F0C060;
+  --saffron-dark: #C08828;
+  --jade: #2A9D8F;
+  --jade-light: #3DBDAD;
+  --jade-dark: #1E7A6E;
+  --rose: #E8567F;
+  --rose-light: #F07898;
+  --rose-dark: #C03860;
+
+  /* Neutrals */
+  --sand: #F5F0E8;
+  --sand-light: #FAF7F2;
+  --cream: #FFF8F0;
+  --night: #1A1A2E;
+  --night-light: #2D2D44;
+  --charcoal: #3A3A52;
+  --slate: #6B6B80;
+  --silver: #A0A0B0;
+  --pearl: #E8E8EE;
+
+  /* Semantic */
+  --bg-primary: var(--sand-light);
+  --bg-secondary: var(--cream);
+  --bg-card: #FFFFFF;
+  --bg-dark: var(--night);
+  --text-primary: var(--night);
+  --text-secondary: var(--slate);
+  --text-muted: var(--silver);
+  --text-on-dark: var(--cream);
+  --text-on-accent: #FFFFFF;
+  --border-light: rgba(0,0,0,0.06);
+  --border-medium: rgba(0,0,0,0.12);
+
+  /* Gradients */
+  --gradient-moroccan: linear-gradient(135deg, var(--majorelle) 0%, var(--terracotta) 50%, var(--saffron) 100%);
+  --gradient-sunset: linear-gradient(135deg, var(--terracotta) 0%, var(--saffron) 100%);
+  --gradient-ocean: linear-gradient(135deg, var(--majorelle) 0%, var(--jade) 100%);
+  --gradient-rose: linear-gradient(135deg, var(--rose) 0%, var(--saffron) 100%);
+  --gradient-night: linear-gradient(135deg, var(--night) 0%, var(--majorelle-dark) 100%);
+  --gradient-glass: linear-gradient(135deg, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0.05) 100%);
+
+  /* Typography */
+  --font-sans: 'Outfit', 'Noto Sans Arabic', system-ui, sans-serif;
+  --font-arabic: 'Noto Sans Arabic', 'Outfit', sans-serif;
+
+  --text-xs: 0.75rem;
+  --text-sm: 0.875rem;
+  --text-base: 1rem;
+  --text-lg: 1.125rem;
+  --text-xl: 1.25rem;
+  --text-2xl: 1.5rem;
+  --text-3xl: 2rem;
+  --text-4xl: 2.5rem;
+  --text-5xl: 3.5rem;
+  --text-6xl: 4.5rem;
+
+  --font-light: 300;
+  --font-regular: 400;
+  --font-medium: 500;
+  --font-semibold: 600;
+  --font-bold: 700;
+  --font-extrabold: 800;
+
+  /* Spacing */
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-5: 1.25rem;
+  --space-6: 1.5rem;
+  --space-8: 2rem;
+  --space-10: 2.5rem;
+  --space-12: 3rem;
+  --space-16: 4rem;
+  --space-20: 5rem;
+  --space-24: 6rem;
+  --space-32: 8rem;
+
+  /* Border Radius */
+  --radius-sm: 0.375rem;
+  --radius-md: 0.75rem;
+  --radius-lg: 1rem;
+  --radius-xl: 1.5rem;
+  --radius-2xl: 2rem;
+  --radius-full: 9999px;
+  --radius-arch: 50% 50% 0 0;
+
+  /* Shadows */
+  --shadow-sm: 0 1px 3px rgba(26,26,46,0.06);
+  --shadow-md: 0 4px 12px rgba(26,26,46,0.08);
+  --shadow-lg: 0 8px 24px rgba(26,26,46,0.1);
+  --shadow-xl: 0 16px 48px rgba(26,26,46,0.12);
+  --shadow-glow-majorelle: 0 4px 24px rgba(96,98,255,0.3);
+  --shadow-glow-terracotta: 0 4px 24px rgba(199,91,57,0.3);
+  --shadow-glow-rose: 0 4px 24px rgba(232,86,127,0.3);
+
+  /* Transitions */
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
+  --duration-fast: 150ms;
+  --duration-normal: 300ms;
+  --duration-slow: 500ms;
+
+  /* Layout */
+  --max-width: 1280px;
+  --sidebar-width: 280px;
+  --navbar-height: 72px;
+  --bottom-nav-height: 72px;
+}
+
+/* Dark mode */
+[data-theme="dark"] {
+  --bg-primary: var(--night);
+  --bg-secondary: var(--night-light);
+  --bg-card: var(--charcoal);
+  --text-primary: var(--cream);
+  --text-secondary: var(--silver);
+  --text-muted: var(--slate);
+  --border-light: rgba(255,255,255,0.06);
+  --border-medium: rgba(255,255,255,0.12);
+  --shadow-sm: 0 1px 3px rgba(0,0,0,0.2);
+  --shadow-md: 0 4px 12px rgba(0,0,0,0.3);
+  --shadow-lg: 0 8px 24px rgba(0,0,0,0.4);
+  --shadow-xl: 0 16px 48px rgba(0,0,0,0.5);
+}
+
+/* ---- Animations ---- */
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes fadeInDown {
+  from { opacity: 0; transform: translateY(-20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes slideInLeft {
+  from { opacity: 0; transform: translateX(-30px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes slideInRight {
+  from { opacity: 0; transform: translateX(30px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes scaleIn {
+  from { opacity: 0; transform: scale(0.9); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+@keyframes pulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.05); }
+}
+
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-10px); }
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+@keyframes gradientShift {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+/* ---- Utility Classes ---- */
+.container {
+  width: 100%;
+  max-width: var(--max-width);
+  margin: 0 auto;
+  padding: 0 var(--space-6);
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  border: 0;
+}
+
+.glass {
+  background: rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.glass-light {
+  background: rgba(255, 255, 255, 0.7);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.5);
+}
+
+.text-gradient {
+  background: var(--gradient-moroccan);
+  background-size: 200% 200%;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  animation: gradientShift 4s ease infinite;
+}
+
+/* Scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--silver);
+  border-radius: var(--radius-full);
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--slate);
+}
+
+/* Zellige Background Pattern */
+.zellige-bg {
+  position: relative;
+}
+.zellige-bg::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  opacity: 0.03;
+  background-image: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%231A1A2E' fill-opacity='1'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+  pointer-events: none;
+  z-index: 0;
+}
