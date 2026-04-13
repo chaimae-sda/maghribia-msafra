@@ -65,13 +65,20 @@
 }
 
 /* Ring for stories */
-.avatar_ring {
+.story_ring {
   padding: 3px;
   background: var(--gradient-moroccan);
   border-radius: var(--radius-full);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 }
 
-.avatar_ring .avatar_img,
-.avatar_ring .avatar_fallback {
-  border: 2px solid var(--bg-card);
+.story_ring_lg { padding: 4px; }
+.story_ring_xl { padding: 5px; }
+.story_ring_2xl { padding: 6px; }
+
+.story_ring .avatar_img,
+.story_ring .avatar_fallback {
+  border: 2px solid var(--bg-primary);
 }

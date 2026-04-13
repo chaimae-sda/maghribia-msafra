@@ -5,10 +5,15 @@
 
 .header {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: space-between;
   margin-bottom: var(--space-6);
   gap: var(--space-4);
+}
+
+.header_actions {
+  display: flex;
+  gap: var(--space-3);
 }
 
 .header h1 {
@@ -315,6 +320,99 @@
   display: flex;
   flex-direction: column;
   gap: var(--space-3);
+}
+
+/* Scanner */
+.scanner_container {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 4/3;
+  background: #000;
+  border-radius: var(--radius-xl);
+  overflow: hidden;
+  margin-bottom: var(--space-6);
+}
+
+.video_feed {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.scanner_overlay {
+  position: absolute;
+  inset: 0;
+  border: 40px solid rgba(0,0,0,0.5);
+  pointer-events: none;
+}
+
+.scanner_overlay::after {
+  content: '';
+  position: absolute;
+  inset: 40px;
+  border: 2px solid var(--majorelle);
+  animation: scanAnim 2s infinite ease-in-out;
+}
+
+@keyframes scanAnim {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(100%); }
+}
+
+.scan_success {
+  position: absolute;
+  inset: 0;
+  background: var(--jade);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  gap: 1rem;
+  z-index: 10;
+}
+
+.scan_sim_btn {
+  position: absolute;
+  bottom: 1rem;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(255,255,255,0.2);
+  color: white;
+  border: 1px solid white;
+  padding: 0.5rem 1rem;
+  border-radius: 20px;
+  z-index: 5;
+}
+
+/* Form elements */
+.input {
+  width: 100%;
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border-medium);
+  background: var(--bg-primary);
+  font-size: var(--text-sm);
+  outline: none;
+}
+
+.input:focus {
+  border-color: var(--majorelle);
+}
+
+.textarea {
+  width: 100%;
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border-medium);
+  background: var(--bg-primary);
+  font-size: var(--text-sm);
+  outline: none;
+  resize: vertical;
+}
+
+.textarea:focus {
+  border-color: var(--majorelle);
 }
 
 @media (max-width: 768px) {

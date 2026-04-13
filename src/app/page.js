@@ -1,5 +1,9 @@
+'use client';
+
+import { useState } from 'react';
 import Link from 'next/link';
-import { Shield, Users, Home, MessageCircle, Calendar, ShoppingBag, ArrowRight, Star, MapPin, ChevronRight, Heart, Compass, Globe } from 'lucide-react';
+import { Shield, Users, Home, MessageCircle, Calendar, ShoppingBag, ArrowRight, Star, MapPin, ChevronRight, Heart, Compass, Globe, Building2, X } from 'lucide-react';
+import AuthTeaserModal from '@/components/features/AuthTeaserModal';
 import styles from './page.module.css';
 
 const features = [
@@ -47,18 +51,21 @@ const testimonials = [
     city: 'Marrakech',
     text: 'Grâce à Maghribia Msafra, j\'ai pu organiser ma première randonnée dans l\'Atlas avec 8 femmes extraordinaires. Une expérience inoubliable !',
     rating: 5,
+    image: '/testimonial_fatima.png'
   },
   {
     name: 'Nour E.',
     city: 'Tanger',
     text: 'En tant qu\'étudiante, je trouvais difficile de voyager seule. Cette plateforme m\'a permis de découvrir Essaouira en toute sécurité.',
     rating: 5,
+    image: '/testimonial_nour.png'
   },
   {
     name: 'Khadija A.',
     city: 'Montréal',
     text: 'Expatriée au Canada, j\'utilise l\'app pour rester connectée avec le Maroc et planifier mes voyages de retour entre marocaines.',
     rating: 5,
+    image: '/testimonial_khadija.png'
   },
 ];
 
@@ -72,6 +79,8 @@ const cities = [
 ];
 
 export default function LandingPage() {
+  const [showAuthTeaser, setShowAuthTeaser] = useState(null);
+
   return (
     <div className={styles.landing}>
       {/* Hero */}
@@ -83,14 +92,80 @@ export default function LandingPage() {
 
         <nav className={styles.hero_nav}>
           <Link href="/" className={styles.hero_logo}>
-            <img src="/logo.png" alt="Logo" width={56} height={56} />
+            <img src="/logo.png" alt="Logo" width={80} height={80} />
             <span>Maghribia <strong>Msafra</strong></span>
           </Link>
-          <div className={styles.hero_nav_right}>
-            <Link href="/login" className={styles.hero_nav_link}>Se connecter</Link>
-            <Link href="/register" className={styles.hero_cta_sm}>
+
+          {/* Nouveau Design des Boutons de Navigation */}
+          <div className={styles.hero_nav_right} style={{ display: 'flex', alignItems: 'center', gap: '1.25rem' }}>
+            <Link href="/login" style={{
+              color: '#fff',
+              fontWeight: 600,
+              textDecoration: 'none',
+              fontSize: '0.95rem',
+              transition: 'opacity 0.2s ease',
+            }}
+              onMouseOver={(e) => e.currentTarget.style.opacity = '0.7'}
+              onMouseOut={(e) => e.currentTarget.style.opacity = '1'}
+            >
+              Connexion
+            </Link>
+
+            <Link href="/login-agency" style={{
+              color: '#fff',
+              background: 'rgba(255, 255, 255, 0.1)',
+              backdropFilter: 'blur(12px)',
+              WebkitBackdropFilter: 'blur(12px)',
+              padding: '0.6rem 1.25rem',
+              borderRadius: '100px',
+              border: '1px solid rgba(255, 255, 255, 0.3)',
+              fontWeight: 600,
+              fontSize: '0.95rem',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
+              textDecoration: 'none',
+              transition: 'all 0.3s ease',
+            }}
+              onMouseOver={(e) => {
+                e.currentTarget.style.background = 'rgba(255, 255, 255, 0.2)';
+                e.currentTarget.style.transform = 'translateY(-2px)';
+              }}
+              onMouseOut={(e) => {
+                e.currentTarget.style.background = 'rgba(255, 255, 255, 0.1)';
+                e.currentTarget.style.transform = 'translateY(0)';
+              }}
+            >
+              <Building2 size={18} color="#FF758F" />
+              Connexion Agence
+            </Link>
+
+            <Link href="/register" style={{
+              background: 'linear-gradient(135deg, #FF758F 0%, #E8567F 100%)',
+              color: '#fff',
+              padding: '0.6rem 1.5rem',
+              borderRadius: '100px',
+              fontWeight: 700,
+              fontSize: '0.95rem',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
+              textDecoration: 'none',
+              transition: 'all 0.3s ease',
+              border: 'none',
+              boxShadow: '0 4px 15px rgba(232, 86, 127, 0.4)'
+            }}
+              onMouseOver={(e) => {
+                e.currentTarget.style.transform = 'translateY(-2px)';
+                e.currentTarget.style.boxShadow = '0 6px 20px rgba(232, 86, 127, 0.6)';
+              }}
+              onMouseOut={(e) => {
+                e.currentTarget.style.transform = 'translateY(0)';
+                e.currentTarget.style.boxShadow = '0 4px 15px rgba(232, 86, 127, 0.4)';
+              }}
+            >
               Rejoindre
-              <ArrowRight size={16} />
+              <ArrowRight size={18} />
             </Link>
           </div>
         </nav>
@@ -104,7 +179,7 @@ export default function LandingPage() {
             <span className={styles.hero_title_gradient}>femmes marocaines</span>
           </h1>
           <p className={styles.hero_subtitle}>
-            Rejoignez la première communauté de voyage au féminin au Maroc. 
+            Rejoignez la première communauté de voyage au féminin au Maroc.
             Partagez, hébergez, explorez — en toute confiance.
           </p>
           <div className={styles.hero_actions}>
@@ -116,6 +191,52 @@ export default function LandingPage() {
               Découvrir la communauté
             </Link>
           </div>
+
+          {/* Agency Call-to-Action */}
+          <div style={{
+            marginTop: '2rem',
+            background: 'rgba(255,255,255,0.15)',
+            backdropFilter: 'blur(20px)',
+            border: '1px solid rgba(255,255,255,0.3)',
+            padding: '1.25rem 1.5rem',
+            borderRadius: '20px',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'flex-start',
+            gap: '0.75rem',
+            maxWidth: '550px',
+            textAlign: 'left',
+            boxShadow: '0 10px 30px rgba(0,0,0,0.1)',
+            animation: 'fadeInUp 0.6s ease-out 0.2s both'
+          }}>
+            <h3 style={{ margin: 0, fontSize: '1.15rem', color: '#fff', display: 'flex', alignItems: 'center', gap: '0.6rem', fontWeight: 700 }}>
+              <Building2 size={22} color="var(--rose)" />
+              Vous êtes une agence de voyage ?
+            </h3>
+            <p style={{ margin: 0, fontSize: '0.9rem', color: 'rgba(255,255,255,0.9)', lineHeight: '1.5' }}>
+              Publiez vos offres exclusives et touchez notre communauté de voyageuses vérifiées.
+            </p>
+            <Link href="/register-agency" style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '0.5rem',
+              background: '#fff',
+              color: 'var(--majorelle)',
+              padding: '0.5rem 1.25rem',
+              borderRadius: '10px',
+              fontWeight: 700,
+              fontSize: '0.85rem',
+              textDecoration: 'none',
+              transition: 'transform 0.2s',
+              boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
+            }}
+              onMouseOver={e => e.currentTarget.style.transform = 'translateY(-2px)'}
+              onMouseOut={e => e.currentTarget.style.transform = 'translateY(0)'}
+            >
+              Inscrire mon agence <ArrowRight size={16} />
+            </Link>
+          </div>
+
           <div className={styles.hero_stats}>
             <div className={styles.hero_stat}>
               <strong>2,500+</strong>
@@ -174,14 +295,19 @@ export default function LandingPage() {
           </div>
           <div className={styles.cities_grid}>
             {cities.map((city, i) => (
-              <Link href="/messages" key={i} className={styles.city_card}>
+              <div
+                key={i}
+                className={styles.city_card}
+                style={{ cursor: 'pointer' }}
+                onClick={() => setShowAuthTeaser('city')}
+              >
                 <span className={styles.city_emoji}>{city.emoji}</span>
                 <div className={styles.city_info}>
                   <h3>{city.name}</h3>
                   <span>{city.members} membres</span>
                 </div>
                 <ChevronRight size={20} className={styles.city_arrow} />
-              </Link>
+              </div>
             ))}
           </div>
         </div>
@@ -205,7 +331,11 @@ export default function LandingPage() {
                 <p className={styles.testimonial_text}>&ldquo;{t.text}&rdquo;</p>
                 <div className={styles.testimonial_author}>
                   <div className={styles.testimonial_avatar}>
-                    {t.name[0]}
+                    {t.image ? (
+                      <img src={t.image} alt={t.name} style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '50%' }} />
+                    ) : (
+                      t.name[0]
+                    )}
                   </div>
                   <div>
                     <strong>{t.name}</strong>
@@ -237,40 +367,73 @@ export default function LandingPage() {
         <div className={styles.footer_inner}>
           <div className={styles.footer_brand}>
             <div className={styles.footer_logo}>
-              <img src="/logo.png" alt="Logo" width={48} height={48} />
-              <span>Maghribia Msafra</span>
+              <img src="/logo.png" alt="Logo" width={64} height={64} style={{ objectFit: 'contain' }} />
+              <span style={{ fontSize: '1.5rem', fontWeight: 800 }}>Maghribia <span style={{ color: 'var(--rose)' }}>Msafra</span></span>
             </div>
-            <p>La première plateforme de voyage au féminin au Maroc. Sécurisée, solidaire, authentique.</p>
+            <p style={{ maxWidth: '350px', opacity: 0.8, lineHeight: '1.6' }}>
+              La première plateforme de voyage au féminin au Maroc.
+              Sécurisée, solidaire et authentique.
+            </p>
           </div>
+
           <div className={styles.footer_links}>
             <div className={styles.footer_col}>
               <h4>Plateforme</h4>
-              <Link href="/feed">Fil d'actualité</Link>
-              <Link href="/hosting">Hébergement</Link>
-              <Link href="/events">Événements</Link>
-              <Link href="/shop">Voyages</Link>
+              <a
+                style={{ cursor: 'pointer' }}
+                onClick={(e) => { e.preventDefault(); setShowAuthTeaser('feed'); }}
+              >
+                Fil d'actualité
+              </a>
+              <a
+                style={{ cursor: 'pointer' }}
+                onClick={(e) => { e.preventDefault(); setShowAuthTeaser('hosting'); }}
+              >
+                Hébergement
+              </a>
+              <a
+                style={{ cursor: 'pointer' }}
+                onClick={(e) => { e.preventDefault(); setShowAuthTeaser('evenements'); }}
+              >
+                Événements
+              </a>
+              <a
+                style={{ cursor: 'pointer' }}
+                onClick={(e) => { e.preventDefault(); setShowAuthTeaser('voyages'); }}
+              >
+                Voyages
+              </a>
             </div>
+
             <div className={styles.footer_col}>
               <h4>Sécurité</h4>
-              <a href="#">Vérification KYC</a>
-              <a href="#">Politique de confidentialité</a>
-              <a href="#">Conditions d'utilisation</a>
-              <a href="#">Conformité CNDP</a>
+              <Link href="/kyc">Vérification KYC</Link>
+              <Link href="/privacy">Politique de confidentialité</Link>
+              <Link href="/terms">Conditions d'utilisation</Link>
+              <Link href="/cndp">Conformité CNDP</Link>
             </div>
+
             <div className={styles.footer_col}>
               <h4>Contact</h4>
-              <a href="#">Support</a>
-              <a href="#">contact@maghribiamsafra.ma</a>
-              <a href="#">Instagram</a>
-              <a href="#">Facebook</a>
+              <a href="mailto:contact@maghribiamsafra.ma">contact@maghribiamsafra.ma</a>
+              <a href="https://instagram.com" target="_blank" rel="noopener noreferrer">Instagram</a>
+              <a href="https://facebook.com" target="_blank" rel="noopener noreferrer">Facebook</a>
             </div>
           </div>
+
           <div className={styles.footer_bottom}>
             <p>© 2024 Maghribia Msafra. Tous droits réservés. 🇲🇦</p>
             <p>Fait avec <Heart size={14} fill="var(--rose)" color="var(--rose)" /> au Maroc</p>
           </div>
         </div>
       </footer>
+      {/* Auth Teaser Modal */}
+      {showAuthTeaser && (
+        <AuthTeaserModal
+          action={showAuthTeaser}
+          onClose={() => setShowAuthTeaser(null)}
+        />
+      )}
     </div>
   );
 }

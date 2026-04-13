@@ -1,0 +1,17 @@
+.cinVerifier { display: flex; flex-direction: column; gap: var(--space-4); }
+.inputGroup { position: relative; display: flex; align-items: center; }
+.inputIcon { position: absolute; left: var(--space-4); color: var(--text-muted); z-index: 1; }
+.cinInput { width: 100%; padding: var(--space-4) var(--space-4) var(--space-4) var(--space-12); font-size: var(--text-lg); font-weight: var(--font-semibold); letter-spacing: 0.1em; text-transform: uppercase; border: 2px solid var(--border-light); border-radius: var(--radius-lg); background: var(--bg-card); color: var(--text-primary); outline: none; transition: all var(--duration-normal); }
+.cinInput:focus { border-color: var(--majorelle); box-shadow: 0 0 0 3px rgba(96,98,255,0.15); }
+.cinInput_valid { border-color: var(--jade); }
+.cinInput_valid:focus { border-color: var(--jade); box-shadow: 0 0 0 3px rgba(42,157,143,0.15); }
+.cinInput_invalid { border-color: var(--rose); }
+.validIcon { position: absolute; right: var(--space-4); color: var(--jade); }
+.invalidIcon { position: absolute; right: var(--space-4); color: var(--rose); }
+
+.cinInfo { background: rgba(42,157,143,0.06); border: 1px solid rgba(42,157,143,0.15); border-radius: var(--radius-lg); padding: var(--space-4); display: flex; flex-direction: column; gap: var(--space-2); animation: fadeInUp 0.3s var(--ease-out); }
+.cinInfo_item { display: flex; align-items: center; gap: var(--space-2); font-size: var(--text-sm); color: var(--text-secondary); }
+.cinInfo_item strong { color: var(--text-primary); }
+.cinInfo_badge { display: inline-flex; align-items: center; gap: var(--space-1); font-size: var(--text-sm); font-weight: var(--font-semibold); color: var(--jade); margin-top: var(--space-1); }
+
+.errorText { display: flex; align-items: center; gap: var(--space-2); font-size: var(--text-sm); color: var(--rose); }

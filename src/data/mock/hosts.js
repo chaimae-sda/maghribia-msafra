@@ -1,9 +1,9 @@
 export const hosts = [
   {
     id: 'h1',
-    userId: 'u4',
+    userId: '7490b5d1-569c-4f55-8af7-cbff8cae98d3',
     name: 'Salma Idrissi',
-    avatar: '/avatars/salma.jpg',
+    avatar: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=200',
     city: 'Fès',
     neighborhood: 'Médina',
     badge: 'Hôte d\'Or',
@@ -14,17 +14,21 @@ export const hosts = [
     maxGuests: 2,
     available: true,
     nextAvailable: '2024-04-20',
-    photos: ['/travel-1.png'],
+    photos: ['https://images.unsplash.com/photo-1590073242678-70ee3fc28e8e?w=800'],
     pricePerNight: 0,
     isFree: true,
     languages: ['Français', 'العربية', 'English'],
     responseTime: '< 1 heure',
+    reviews: [
+      { author: 'Lila', rating: 5, comment: 'Séjour incroyable, Salma est d\'une gentillesse rare !' },
+      { author: 'Chaima', rating: 4, comment: 'Magnifique riad au coeur de la medina.' }
+    ]
   },
   {
     id: 'h2',
-    userId: 'u6',
+    userId: 'c2a6c984-9c89-477e-acb9-b2c94514ea9f',
     name: 'Yasmine Benkirane',
-    avatar: '/avatars/yasmine.jpg',
+    avatar: 'https://images.unsplash.com/photo-1531123897727-8f129e16fd3c?w=200',
     city: 'Essaouira',
     neighborhood: 'Kasbah',
     badge: 'Exploratrice',
@@ -35,17 +39,20 @@ export const hosts = [
     maxGuests: 3,
     available: true,
     nextAvailable: '2024-04-15',
-    photos: ['/travel-1.png'],
+    photos: ['https://images.unsplash.com/photo-1512918728675-ed5a9ecdebfd?w=800'],
     pricePerNight: 0,
     isFree: true,
     languages: ['Français', 'العربية'],
     responseTime: '< 2 heures',
+    reviews: [
+      { author: 'Sonia', rating: 5, comment: 'La vue sur la mer est juste magique au réveil.' }
+    ]
   },
   {
     id: 'h3',
-    userId: 'u2',
-    name: 'Fatima Zahra',
-    avatar: '/avatars/fatima.jpg',
+    userId: '422906f0-2a53-4c7d-8e48-dcaab3ab3cc0',
+    name: 'Fatima Zohra',
+    avatar: 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=200',
     city: 'Marrakech',
     neighborhood: 'Guéliz',
     badge: 'Ambassadrice',
@@ -54,19 +61,20 @@ export const hosts = [
     description: 'Chambre cosy dans un appartement moderne à Guéliz. Proche de tous les restaurants et cafés branchés. Idéal comme base pour explorer Marrakech !',
     amenities: ['WiFi', 'Climatisation', 'Machine à laver', 'Parking'],
     maxGuests: 1,
-    available: false,
+    available: true,
     nextAvailable: '2024-05-01',
-    photos: ['/travel-1.png'],
+    photos: ['https://images.unsplash.com/photo-1522771739844-6a9f6d5f14af?w=800'],
     pricePerNight: 0,
     isFree: true,
     languages: ['Français', 'العربية', 'English', 'Español'],
     responseTime: '< 30 min',
+    reviews: []
   },
   {
     id: 'h4',
-    userId: 'u5',
+    userId: '6228fffd-acba-49fe-bdb6-afc4fe1aa476',
     name: 'Khadija Amrani',
-    avatar: '/avatars/khadija.jpg',
+    avatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=200',
     city: 'Rabat',
     neighborhood: 'Agdal',
     badge: 'Voyageuse',
@@ -77,10 +85,12 @@ export const hosts = [
     maxGuests: 2,
     available: true,
     nextAvailable: '2024-04-18',
-    photos: ['/travel-1.png'],
+    photos: ['https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?w=800'],
     pricePerNight: 0,
     isFree: true,
     languages: ['Français', 'العربية', 'English'],
     responseTime: '< 6 heures',
+    reviews: []
   },
 ];
+

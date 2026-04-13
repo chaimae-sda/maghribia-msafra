@@ -47,7 +47,7 @@
   transition: all var(--duration-fast);
 }
 
-.category:hover {
+.category:hover:not(.category_active) {
   border-color: var(--saffron);
   color: var(--saffron-dark);
 }

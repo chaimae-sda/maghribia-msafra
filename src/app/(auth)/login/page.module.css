@@ -57,10 +57,26 @@
 
 .kyc_info { display: flex; gap: var(--space-3); padding: var(--space-4); background: rgba(96,98,255,0.06); border-radius: var(--radius-lg); font-size: var(--text-sm); color: var(--majorelle); align-items: flex-start; }
 
+/* Progress Bar */
+.progressContainer { display: flex; align-items: center; gap: var(--space-3); margin-bottom: var(--space-6); }
+.progressTrack { flex: 1; height: 4px; background: var(--pearl); border-radius: var(--radius-full); overflow: hidden; }
+.progressFill { height: 100%; background: var(--gradient-moroccan); border-radius: var(--radius-full); transition: width 0.5s var(--ease-out); }
+.progressLabel { font-size: var(--text-xs); font-weight: var(--font-semibold); color: var(--text-muted); white-space: nowrap; }
+
+/* Error Banner */
+.errorBanner { display: flex; align-items: center; justify-content: space-between; padding: var(--space-3) var(--space-4); background: rgba(232,86,127,0.08); border: 1px solid rgba(232,86,127,0.2); border-radius: var(--radius-lg); margin-bottom: var(--space-4); font-size: var(--text-sm); color: var(--rose); animation: fadeInUp 0.3s var(--ease-out); }
+.errorBanner button { background: none; border: none; color: var(--rose); cursor: pointer; font-size: var(--text-base); padding: 0; }
+
+/* Spinner */
+:global(.spin) { animation: spin 1s linear infinite; }
+@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+
 @media (max-width: 768px) {
   .auth { grid-template-columns: 1fr; }
   .auth_left { display: none; }
   .auth_right { padding: var(--space-6); }
-  .steps { flex-direction: column; }
+  .auth_form_container { max-width: 100%; }
+  .steps { flex-wrap: wrap; gap: var(--space-2); }
+  .step_label { display: none; }
   .step_line { display: none; }
 }

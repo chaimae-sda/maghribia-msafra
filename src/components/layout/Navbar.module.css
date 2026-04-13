@@ -128,6 +128,34 @@
   border: 2px solid var(--bg-primary);
 }
 
+.badge_nav {
+  background-color: var(--rose);
+  color: white;
+  border-radius: var(--radius-full);
+  padding: 2px 6px;
+  font-size: 0.7rem;
+  font-weight: var(--font-bold);
+  margin-left: 2px;
+}
+
+.badge_icon {
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  background-color: var(--rose);
+  color: white;
+  border-radius: var(--radius-full);
+  min-width: 18px;
+  height: 18px;
+  font-size: 0.65rem;
+  font-weight: var(--font-bold);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid var(--bg-card);
+  padding: 0 4px;
+}
+
 .profile_btn {
   text-decoration: none;
 }
@@ -148,6 +176,29 @@
 
 .profile_btn:hover .profile_avatar {
   transform: scale(1.05);
+}
+
+.profile_avatar_img {
+  width: 100%;
+  height: 100%;
+  border-radius: var(--radius-full);
+  object-fit: cover;
+}
+
+.login_btn {
+  padding: var(--space-2) var(--space-5);
+  background: var(--gradient-moroccan);
+  color: white;
+  border-radius: var(--radius-full);
+  font-size: var(--text-sm);
+  font-weight: var(--font-semibold);
+  text-decoration: none;
+  transition: all var(--duration-normal);
+}
+
+.login_btn:hover {
+  opacity: 0.9;
+  transform: translateY(-1px);
 }
 
 .mobile_menu_btn {
