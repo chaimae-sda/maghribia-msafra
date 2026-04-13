@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import {
   Shield, MapPin, Star, MessageSquare, UserPlus, ArrowLeft,
   Compass, Home as HomeIcon, Heart, Calendar, Loader2, Check,
-  MoreVertical, ShieldBan, UserMinus // <-- Nouveaux icônes ajoutés
+  MoreVertical, ShieldBan, UserMinus
 } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { supabase } from '@/lib/supabase';
@@ -24,12 +24,12 @@ export default function PublicProfilePage({ params }) {
   const [targetProfile, setTargetProfile] = useState(null);
   const [posts, setPosts] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [friendshipStatus, setFriendshipStatus] = useState(null); // 'none', 'pending', 'accepted', 'blocked'
+  const [friendshipStatus, setFriendshipStatus] = useState(null);
   const [isMe, setIsMe] = useState(false);
   const [activeStory, setActiveStory] = useState(null);
   const [viewingStory, setViewingStory] = useState(null);
   const [showAuthTeaser, setShowAuthTeaser] = useState(null);
-  const [showOptionsPopup, setShowOptionsPopup] = useState(false); // <-- État pour le menu
+  const [showOptionsPopup, setShowOptionsPopup] = useState(false);
 
   useEffect(() => {
     if (currentUser?.id === id) {
@@ -118,7 +118,6 @@ export default function PublicProfilePage({ params }) {
     if (!error) setFriendshipStatus('pending');
   }
 
-  // --- NOUVELLES FONCTIONS : RETIRER & BLOQUER ---
   async function handleRemoveFriend() {
     if (!confirm('Voulez-vous vraiment retirer cette personne de vos amies ?')) return;
 
@@ -149,9 +148,12 @@ export default function PublicProfilePage({ params }) {
 
     setFriendshipStatus('blocked');
     setShowOptionsPopup(false);
-    router.replace('/messages'); // On redirige après avoir bloqué
+    router.replace('/messages');
   }
-  // -----------------------------------------------
+
+  const scrollToPublications = () => {
+    document.getElementById('publications-section')?.scrollIntoView({ behavior: 'smooth' });
+  };
 
   if (loading) {
     return (
@@ -236,7 +238,6 @@ export default function PublicProfilePage({ params }) {
                   </Button>
                 )}
 
-                {/* --- MENU OPTIONS (3 points) --- */}
                 {currentUser && (
                   <div style={{ position: 'relative' }}>
                     <button
@@ -248,23 +249,18 @@ export default function PublicProfilePage({ params }) {
 
                     {showOptionsPopup && (
                       <div style={{ position: 'absolute', top: '100%', right: 0, marginTop: '8px', background: 'var(--bg-card)', padding: '0.5rem', borderRadius: '12px', boxShadow: 'var(--shadow-lg)', zIndex: 50, border: '1px solid var(--border-light)', minWidth: '180px', display: 'flex', flexDirection: 'column', gap: '4px' }}>
-
                         <button onClick={handleBlockUser} style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '0.5rem', background: 'transparent', border: 'none', color: 'var(--rose)', cursor: 'pointer', borderRadius: '8px', fontSize: '0.85rem', width: '100%', textAlign: 'left' }} onMouseOver={e => e.currentTarget.style.background = 'rgba(255,59,92,0.1)'} onMouseOut={e => e.currentTarget.style.background = 'transparent'}>
                           <ShieldBan size={16} /> Bloquer
                         </button>
-
                         {friendshipStatus === 'accepted' && (
                           <button onClick={handleRemoveFriend} style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '0.5rem', background: 'transparent', border: 'none', color: 'var(--text-primary)', cursor: 'pointer', borderRadius: '8px', fontSize: '0.85rem', width: '100%', textAlign: 'left' }} onMouseOver={e => e.currentTarget.style.background = 'var(--bg-primary)'} onMouseOut={e => e.currentTarget.style.background = 'transparent'}>
                             <UserMinus size={16} /> Retirer des amies
                           </button>
                         )}
-
                       </div>
                     )}
                   </div>
                 )}
-                {/* ------------------------------- */}
-
               </div>
             </div>
             <div className={styles.user_meta}>
@@ -277,22 +273,23 @@ export default function PublicProfilePage({ params }) {
 
       <div className={styles.profile_content}>
         <div className={styles.stats_grid}>
-          <div className={styles.stat_card}>
+          {/* Cliquables */}
+          <div className={styles.stat_card} style={{ cursor: 'pointer' }} onClick={() => { }}>
             <Compass size={24} />
             <strong>{targetProfile.trips_count || 0}</strong>
             <span>Voyages</span>
           </div>
-          <div className={styles.stat_card}>
+          <div className={styles.stat_card} style={{ cursor: 'pointer' }} onClick={() => { }}>
             <HomeIcon size={24} />
             <strong>{targetProfile.hosting_count || 0}</strong>
             <span>Hébergements</span>
           </div>
-          <div className={styles.stat_card}>
+          <div className={styles.stat_card} style={{ cursor: 'pointer' }} onClick={() => { }}>
             <Star size={24} />
             <strong>{targetProfile.rating > 0 ? targetProfile.rating.toFixed(1) : '–'}</strong>
             <span>Note</span>
           </div>
-          <div className={styles.stat_card}>
+          <div className={styles.stat_card} style={{ cursor: 'pointer' }} onClick={scrollToPublications}>
             <Heart size={24} />
             <strong>{posts.length}</strong>
             <span>Publications</span>
@@ -320,8 +317,9 @@ export default function PublicProfilePage({ params }) {
           )}
         </div>
 
+        {/* Cible ID pour le scroll */}
         {posts.length > 0 ? (
-          <div className={styles.section}>
+          <div className={styles.section} id="publications-section">
             <h2>Publications</h2>
             <div className={styles.posts_list}>
               {posts.map(post => (
@@ -345,7 +343,7 @@ export default function PublicProfilePage({ params }) {
             </div>
           </div>
         ) : (
-          <div className={styles.empty_state}>
+          <div className={styles.empty_state} id="publications-section">
             <div className={styles.empty_icon}>✍️</div>
             <h3>Aucune publication</h3>
           </div>

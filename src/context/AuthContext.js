@@ -210,7 +210,7 @@ export function AuthProvider({ children }) {
     signOut,
     createProfile,
     updateProfile,
-    uploadAvatar,
+    fetchAvatar: uploadAvatar, // Alias if needed
     fetchProfile,
     signInWithGoogle,
     unreadCount,

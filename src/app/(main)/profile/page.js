@@ -25,7 +25,7 @@ export default function ProfilePage() {
   const [editBio, setEditBio] = useState('');
   const [editHobbies, setEditHobbies] = useState([]);
   const [editSocialLinks, setEditSocialLinks] = useState({ instagram: '', facebook: '', tiktok: '' });
-  const [editVisibility, setEditVisibility] = useState('public'); // public or private
+  const [editVisibility, setEditVisibility] = useState('public');
   const [saving, setSaving] = useState(false);
   const [posts, setPosts] = useState([]);
   const [newPost, setNewPost] = useState('');
@@ -47,7 +47,6 @@ export default function ProfilePage() {
     }
   }, [profile]);
 
-  // Fetch user posts
   useEffect(() => {
     if (user) {
       fetchPosts();
@@ -59,22 +58,22 @@ export default function ProfilePage() {
       .from('posts')
       .select('*')
       .eq('user_id', user.id)
-      .eq('is_archived', false) // Only show active posts
+      .eq('is_archived', false)
       .order('created_at', { ascending: false })
       .limit(20);
-    
+
     if (data) setPosts(data);
   }
 
   const handlePostAction = async (postId, action, e) => {
     if (e) e.stopPropagation();
-    
+
     if (action === 'delete') {
       setDeletingPostId(postId);
     } else if (action === 'delete-confirm') {
       setDeletingPostId(null);
       const { error } = await supabase.from('posts').delete().eq('id', postId).eq('user_id', user.id);
-      
+
       if (error) {
         alert('Erreur Profil : ' + error.message);
       } else {
@@ -92,7 +91,6 @@ export default function ProfilePage() {
     }
   };
 
-  // Create post
   async function handleCreatePost(e) {
     e.preventDefault();
     if (!newPost.trim()) return;
@@ -115,7 +113,6 @@ export default function ProfilePage() {
     setPostingKind(false);
   }
 
-  // Save profile edits
   async function handleSave() {
     setSaving(true);
     await updateProfile({ bio: editBio, hobbies: editHobbies, social_links: editSocialLinks, visibility: editVisibility });
@@ -123,14 +120,12 @@ export default function ProfilePage() {
     setEditing(false);
   }
 
-  // Toggle hobby
   function toggleHobby(hobby) {
     setEditHobbies(prev =>
       prev.includes(hobby) ? prev.filter(h => h !== hobby) : [...prev, hobby]
     );
   }
 
-  // Handle avatar change
   async function handleAvatarChange(e) {
     const file = e.target.files[0];
     if (!file) return;
@@ -139,6 +134,10 @@ export default function ProfilePage() {
       await updateProfile({ avatar_url: url });
     }
   }
+
+  const scrollToPublications = () => {
+    document.getElementById('publications-section')?.scrollIntoView({ behavior: 'smooth' });
+  };
 
   if (authLoading) {
     return (
@@ -163,7 +162,6 @@ export default function ProfilePage() {
 
   return (
     <div className={styles.profile}>
-      {/* Cover + Avatar */}
       <div className={styles.cover}>
         <div className={styles.cover_gradient} />
         <div className={styles.avatar_section}>
@@ -201,31 +199,30 @@ export default function ProfilePage() {
       </div>
 
       <div className={styles.profile_content}>
-        {/* Stats */}
         <div className={styles.stats_grid}>
-          <div className={styles.stat_card}>
+          {/* Cliquables */}
+          <div className={styles.stat_card} style={{ cursor: 'pointer' }} onClick={() => { }}>
             <Compass size={24} />
             <strong>{profile.trips_count}</strong>
             <span>Voyages</span>
           </div>
-          <div className={styles.stat_card}>
+          <div className={styles.stat_card} style={{ cursor: 'pointer' }} onClick={() => { }}>
             <HomeIcon size={24} />
             <strong>{profile.hosting_count}</strong>
             <span>Hébergements</span>
           </div>
-          <div className={styles.stat_card}>
+          <div className={styles.stat_card} style={{ cursor: 'pointer' }} onClick={() => { }}>
             <Star size={24} />
             <strong>{profile.rating > 0 ? profile.rating.toFixed(1) : '–'}</strong>
             <span>Note</span>
           </div>
-          <div className={styles.stat_card}>
+          <div className={styles.stat_card} style={{ cursor: 'pointer' }} onClick={scrollToPublications}>
             <Heart size={24} />
             <strong>{posts.length}</strong>
             <span>Publications</span>
           </div>
         </div>
 
-        {/* Bio */}
         <div className={styles.section}>
           <div className={styles.section_header}>
             <h2>À propos</h2>
@@ -260,13 +257,13 @@ export default function ProfilePage() {
               <div className={styles.hobbies_section}>
                 <h3>Confidentialité</h3>
                 <div style={{ display: 'flex', gap: '1rem', marginTop: '0.5rem' }}>
-                  <button 
+                  <button
                     className={`${styles.visibility_btn} ${editVisibility === 'public' ? styles.visibility_btn_active : ''}`}
                     onClick={() => setEditVisibility('public')}
                   >
                     🌍 Compte Public
                   </button>
-                  <button 
+                  <button
                     className={`${styles.visibility_btn} ${editVisibility === 'private' ? styles.visibility_btn_active : ''}`}
                     onClick={() => setEditVisibility('private')}
                   >
@@ -274,8 +271,8 @@ export default function ProfilePage() {
                   </button>
                 </div>
                 <p style={{ fontSize: '0.8rem', color: '#666', marginTop: '0.5rem' }}>
-                  {editVisibility === 'public' 
-                    ? "Tout le monde peut voir vos posts et les partager à l'extérieur." 
+                  {editVisibility === 'public'
+                    ? "Tout le monde peut voir vos posts et les partager à l'extérieur."
                     : "Seules vos amies peuvent voir vos posts. Le partage externe est désactivé."}
                 </p>
               </div>
@@ -296,17 +293,16 @@ export default function ProfilePage() {
                 </div>
               )}
               {profile.social_links && (profile.social_links.instagram || profile.social_links.facebook || profile.social_links.tiktok) && (
-                <div className={styles.social_links_display} style={{marginTop: '1rem', display: 'flex', gap: '1rem'}}>
-                  {profile.social_links.instagram && <a href={`https://instagram.com/${profile.social_links.instagram.replace('@','')}`} target="_blank" rel="noreferrer" style={{color: '#E1306C'}}>📸 Instagram</a>}
-                  {profile.social_links.facebook && <a href={profile.social_links.facebook.startsWith('http') ? profile.social_links.facebook : `https://facebook.com/${profile.social_links.facebook}`} target="_blank" rel="noreferrer" style={{color: '#1877F2'}}>📘 Facebook</a>}
-                  {profile.social_links.tiktok && <a href={`https://tiktok.com/@${profile.social_links.tiktok.replace('@','')}`} target="_blank" rel="noreferrer" style={{color: '#000000'}}>🎵 TikTok</a>}
+                <div className={styles.social_links_display} style={{ marginTop: '1rem', display: 'flex', gap: '1rem' }}>
+                  {profile.social_links.instagram && <a href={`https://instagram.com/${profile.social_links.instagram.replace('@', '')}`} target="_blank" rel="noreferrer" style={{ color: '#E1306C' }}>📸 Instagram</a>}
+                  {profile.social_links.facebook && <a href={profile.social_links.facebook.startsWith('http') ? profile.social_links.facebook : `https://facebook.com/${profile.social_links.facebook}`} target="_blank" rel="noreferrer" style={{ color: '#1877F2' }}>📘 Facebook</a>}
+                  {profile.social_links.tiktok && <a href={`https://tiktok.com/@${profile.social_links.tiktok.replace('@', '')}`} target="_blank" rel="noreferrer" style={{ color: '#000000' }}>🎵 TikTok</a>}
                 </div>
               )}
             </>
           )}
         </div>
 
-        {/* New Post */}
         <div className={styles.section}>
           <h2>Publier</h2>
           <form onSubmit={handleCreatePost} className={styles.post_form}>
@@ -325,10 +321,9 @@ export default function ProfilePage() {
           </form>
         </div>
 
-
-        {/* Posts */}
+        {/* Cible ID pour le scroll */}
         {posts.length > 0 && (
-          <div className={styles.section}>
+          <div className={styles.section} id="publications-section">
             <h2>Mes publications</h2>
             <div className={styles.posts_list}>
               {posts.map(post => (
@@ -365,9 +360,8 @@ export default function ProfilePage() {
           </div>
         )}
 
-        {/* Empty state if no posts */}
         {posts.length === 0 && (
-          <div className={styles.empty_state}>
+          <div className={styles.empty_state} id="publications-section">
             <div className={styles.empty_icon}>✍️</div>
             <h3>Aucune publication pour le moment</h3>
             <p>Partagez votre première expérience de voyage avec la communauté !</p>

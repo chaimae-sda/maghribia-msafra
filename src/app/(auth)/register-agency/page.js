@@ -19,6 +19,7 @@ export default function RegisterAgencyPage() {
   const [form, setForm] = useState({
     name: '', email: '', password: '', phone: '', city: '', description: '', rib: ''
   });
+  const [logoFile, setLogoFile] = useState(null);
 
   const update = (k, v) => setForm(p => ({ ...p, [k]: v }));
 
@@ -32,7 +33,22 @@ export default function RegisterAgencyPage() {
     setError('');
 
     try {
-      // 1. Create supabase auth account
+      // 1. Upload Logo if present
+      let avatarUrl = '';
+      if (logoFile) {
+        const fileExt = logoFile.name.split('.').pop();
+        const fileName = `${Date.now()}.${fileExt}`;
+        const { data: uploadData, error: uploadError } = await supabase.storage
+          .from('media')
+          .upload(`logos/${fileName}`, logoFile);
+        
+        if (!uploadError) {
+          const { data: { publicUrl } } = supabase.storage.from('media').getPublicUrl(`logos/${fileName}`);
+          avatarUrl = publicUrl;
+        }
+      }
+
+      // 2. Create supabase auth account
       const { data: authData, error: authError } = await supabase.auth.signUp({
         email: form.email,
         password: form.password,
@@ -41,7 +57,7 @@ export default function RegisterAgencyPage() {
 
       if (authError) throw authError;
 
-      // 2. Create profile as agency (pending approval)
+      // 3. Create profile as agency (pending approval)
       const { error: profileError } = await supabase.from('profiles').insert({
         id: authData.user.id,
         email: form.email,
@@ -49,6 +65,7 @@ export default function RegisterAgencyPage() {
         city: form.city,
         role: 'agency',
         is_approved: false,
+        avatar_url: avatarUrl,
         bio: form.description,
         social_links: { phone: form.phone, rib: form.rib },
       });
@@ -156,6 +173,18 @@ export default function RegisterAgencyPage() {
                 <input type="text" placeholder="Votre RIB pour recevoir les paiements" value={form.rib} onChange={e => update('rib', e.target.value)} required />
               </div>
             </div>
+            <div className={styles.field}>
+              <label>Logo de l'agence</label>
+              <div className={styles.inputWrap} style={{ padding: '8px' }}>
+                <input 
+                  type="file" 
+                  accept="image/*" 
+                  onChange={e => setLogoFile(e.target.files[0])}
+                  style={{ border: 'none', background: 'transparent' }}
+                />
+              </div>
+            </div>
+
             <div className={styles.field}>
               <label>Description de l'agence</label>
               <textarea

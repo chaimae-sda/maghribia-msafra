@@ -6,6 +6,7 @@ import { Shield, Check, X, Building2, MapPin, Phone, Loader2, RefreshCw, Mail, M
 import { useAuth } from '@/context/AuthContext';
 import { supabase } from '@/lib/supabase';
 import Button from '@/components/ui/Button';
+import Badge from '@/components/ui/Badge';
 
 const ADMIN_EMAIL = 'chaimae.sadaoui@gmail.com'; 
 const SECRET_PASSCODE = 'Maghribia2026!';
@@ -19,17 +20,59 @@ export default function AdminPage() {
   const [locked, setLocked] = useState(true);
   const [passcode, setPasscode] = useState('');
   const [passError, setPassError] = useState('');
+  const [platformPayments, setPlatformPayments] = useState([]);
+  const [stats, setStats] = useState({ totalCommissions: 0, totalSubscriptions: 0 });
+  const [approvingId, setApprovingId] = useState(null);
 
   useEffect(() => {
     // Only fetch if unlocked (passcode verified)
     if (!locked) {
-      fetchAgencies();
+      if (tab === 'payments') {
+        fetchPlatformPayments();
+      } else {
+        fetchAgencies();
+      }
+      fetchAdminStats();
     }
   }, [locked, tab]);
 
-  const handleUnlock = (e) => {
+  async function fetchAdminStats() {
+     // Commissions (10% of all confirmed bookings)
+     const { data: bookings } = await supabase
+       .from('bookings')
+       .select('trips(price)')
+       .eq('status', 'confirmed');
+     
+     const commissions = (bookings || []).reduce((sum, b) => sum + (b.trips?.price || 0) * 0.1, 0);
+
+     // Subscriptions (Sum of approved agency payments)
+     const { data: payments } = await supabase
+       .from('agency_platform_payments')
+       .select('amount')
+       .eq('status', 'approved');
+     
+     const subscriptions = (payments || []).reduce((sum, p) => sum + p.amount, 0);
+
+     setStats({ totalCommissions: commissions, totalSubscriptions: subscriptions });
+  }
+
+  async function fetchPlatformPayments() {
+    setLoading(true);
+    const { data } = await supabase
+      .from('agency_platform_payments')
+      .select('*, profiles(full_name, email)')
+      .order('created_at', { ascending: false });
+    setPlatformPayments(data || []);
+    setLoading(false);
+  }
+
+  const handleUnlock = async (e) => {
     e.preventDefault();
     if (passcode === SECRET_PASSCODE) {
+      if (user && user.email === ADMIN_EMAIL) {
+        // Failsafe: ensure only the designated admin email gets the admin role
+        await supabase.from('profiles').update({ role: 'admin' }).eq('id', user.id);
+      }
       setLocked(false);
     } else {
       setPassError('Mot de passe incorrect');
@@ -49,13 +92,69 @@ export default function AdminPage() {
 
   async function handleApprove(id) {
     if (!window.confirm("Avez-vous bien reçu le paiement de cette agence avant de l'approuver ?")) return;
-    await supabase.from('profiles').update({ is_approved: true }).eq('id', id);
-    fetchAgencies();
+    try {
+      setLoading(true);
+      const { error } = await supabase.from('profiles').update({ is_approved: true }).eq('id', id);
+      if (error) throw error;
+      await fetchAgencies();
+      alert("Agence approuvée avec succès !");
+    } catch (err) {
+      alert("Erreur: " + err.message);
+    } finally {
+      setLoading(false);
+    }
   }
 
   async function handleReject(id) {
-    await supabase.from('profiles').update({ is_approved: false, role: 'rejected' }).eq('id', id);
-    fetchAgencies();
+    if (!window.confirm("Voulez-vous vraiment rejeter cette agence ?")) return;
+    try {
+      setLoading(true);
+      const { error } = await supabase.from('profiles').update({ is_approved: false, role: 'rejected' }).eq('id', id);
+      if (error) throw error;
+      await fetchAgencies();
+    } catch (err) {
+      alert("Erreur: " + err.message);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function handleApprovePayment(id) {
+    if (!window.confirm("Voulez-vous approuver ce paiement ? Cela validera la facture de l'agence et mettra à jour vos revenus.")) return;
+    
+    setApprovingId(id);
+    try {
+      console.log('Approuvant le paiement ID:', id);
+      const { data, error } = await supabase
+        .from('agency_platform_payments')
+        .update({ status: 'approved' })
+        .eq('id', id)
+        .select();
+        
+      if (error) {
+        console.error('Erreur Supabase Update:', error);
+        throw error;
+      }
+      
+      if (!data || data.length === 0) {
+        throw new Error("Aucune ligne n'a été mise à jour. Vérifiez vos permissions (RLS) ou si l'ID est correct.");
+      }
+
+      console.log('Mise à jour réussie:', data);
+      
+      // Re-fetch everything to ensure sync
+      await Promise.all([
+        fetchPlatformPayments(),
+        fetchAdminStats()
+      ]);
+      
+      alert("Paiement approuvé avec succès !");
+    } catch (err) {
+      console.error('Erreur Catch:', err);
+      alert("Erreur lors de l'approbation du paiement : " + err.message);
+    } finally {
+      setApprovingId(null);
+    }
   }
 
   if (authLoading) return <div style={{ padding: '3rem', textAlign: 'center' }}><Loader2 className="spin" /></div>;
@@ -117,6 +216,16 @@ export default function AdminPage() {
         >
           ✅ Approuvées
         </button>
+        <button
+          onClick={() => setTab('payments')}
+          style={{
+            padding: '0.6rem 1.2rem', borderRadius: '99px', border: 'none', cursor: 'pointer', fontWeight: 600, fontSize: '0.9rem',
+            background: tab === 'payments' ? 'var(--majorelle)' : '#f0f0f0',
+            color: tab === 'payments' ? '#fff' : '#666'
+          }}
+        >
+          💰 Paiements Reçus
+        </button>
         <button onClick={fetchAgencies} style={{ padding: '0.6rem', borderRadius: '50%', border: 'none', cursor: 'pointer', background: '#f0f0f0' }}>
           <RefreshCw size={16} />
         </button>
@@ -124,15 +233,111 @@ export default function AdminPage() {
 
       {loading && <div style={{ padding: '3rem', textAlign: 'center' }}><Loader2 className="spin" /></div>}
 
-      {!loading && agencies.length === 0 && (
-        <div style={{ textAlign: 'center', padding: '4rem 2rem', background: 'var(--bg-card)', borderRadius: '24px', boxShadow: '0 4px 15px rgba(0,0,0,0.05)' }}>
-          <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>{tab === 'pending' ? '📭' : '🏢'}</div>
-          <h3 style={{ color: 'var(--text-primary)' }}>{tab === 'pending' ? 'Aucune demande en attente' : 'Aucune agence approuvée'}</h3>
+      {!loading && tab === 'payments' && platformPayments.length === 0 && (
+        <div style={{ textAlign: 'center', padding: '4rem 2rem', background: 'var(--bg-card)', borderRadius: '24px' }}>
+          <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>💸</div>
+          <h3 style={{ color: 'var(--text-primary)' }}>Aucun reçu de paiement soumis</h3>
         </div>
       )}
 
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-        {agencies.map(agency => {
+      {/* ADMIN STATS SECTION */}
+      {!loading && !locked && (
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1.5rem', marginBottom: '2.5rem' }}>
+           <div style={{ background: 'var(--bg-card)', padding: '1.5rem', borderRadius: '20px', border: '1px solid var(--border-light)' }}>
+              <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', textTransform: 'uppercase', fontWeight: 700, marginBottom: '0.5rem' }}>Total Commissions (10%)</div>
+              <div style={{ fontSize: '1.8rem', fontWeight: 800, color: 'var(--jade)' }}>{(stats.totalCommissions).toLocaleString()} MAD</div>
+           </div>
+           <div style={{ background: 'var(--bg-card)', padding: '1.5rem', borderRadius: '20px', border: '1px solid var(--border-light)' }}>
+              <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', textTransform: 'uppercase', fontWeight: 700, marginBottom: '0.5rem' }}>Total Abonnements</div>
+              <div style={{ fontSize: '1.8rem', fontWeight: 800, color: 'var(--majorelle)' }}>{(stats.totalSubscriptions).toLocaleString()} MAD</div>
+           </div>
+           <div style={{ background: 'var(--bg-card)', padding: '1.5rem', borderRadius: '24px', border: 'none', background: 'var(--majorelle)', color: '#fff' }}>
+              <div style={{ fontSize: '0.8rem', opacity: 0.8, textTransform: 'uppercase', fontWeight: 700, marginBottom: '0.5rem' }}>Revenu Total Brût</div>
+              <div style={{ fontSize: '1.8rem', fontWeight: 800 }}>{(stats.totalCommissions + stats.totalSubscriptions).toLocaleString()} MAD</div>
+           </div>
+        </div>
+      )}
+
+      {tab === 'payments' && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
+          
+          {/* SECTION : À APPROUVER */}
+          <div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '1.25rem' }}>
+              <div style={{ padding: '6px 12px', background: 'rgba(231,76,60,0.1)', color: 'var(--rose)', borderRadius: '8px', fontSize: '0.85rem', fontWeight: 800 }}>
+                {platformPayments.filter(p => p.status === 'pending').length} EN ATTENTE
+              </div>
+              <h3 style={{ margin: 0 }}>Réception des factures</h3>
+            </div>
+            
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+              {platformPayments.filter(p => p.status === 'pending').length === 0 && (
+                <div style={{ padding: '2rem', textAlign: 'center', background: 'rgba(0,0,0,0.02)', borderRadius: '16px', border: '1px dashed #ccc' }}>
+                  <p style={{ color: 'var(--text-muted)', margin: 0 }}>Aucun nouveau paiement à approuver.</p>
+                </div>
+              )}
+              {platformPayments.filter(p => p.status === 'pending').map(p => (
+                <div key={p.id} style={{ background: 'var(--bg-card)', borderRadius: '20px', padding: '1.5rem', border: '1px solid var(--border-light)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
+                      <Building2 color="var(--majorelle)" />
+                      <div>
+                        <h4 style={{ margin: 0 }}>{p.profiles?.full_name}</h4>
+                        <p style={{ margin: 0, fontSize: '0.85rem', color: 'var(--text-secondary)' }}>Mois: {p.month} · Montant: {p.amount} MAD</p>
+                      </div>
+                  </div>
+                  <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
+                      {p.proof_url && (
+                        <a href={p.proof_url} target="_blank" rel="noreferrer" style={{ fontSize: '0.85rem', color: 'var(--majorelle)', fontWeight: 600 }}>Voir le reçu</a>
+                      )}
+                      <button 
+                        onClick={() => handleApprovePayment(p.id)} 
+                        disabled={approvingId === p.id}
+                        style={{ 
+                          background: 'var(--jade)', color: '#fff', border: 'none', padding: '0.5rem 1rem', 
+                          borderRadius: '8px', cursor: 'pointer', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '8px' 
+                        }}
+                      >
+                        {approvingId === p.id ? <Loader2 className="spin" size={16} /> : <Check size={16} />} 
+                        Approuver
+                      </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* SECTION : HISTORIQUE (VALIDÉS) */}
+          <div style={{ marginTop: '1rem' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '1.25rem' }}>
+              <div style={{ padding: '6px 12px', background: 'rgba(42,157,143,0.1)', color: 'var(--jade)', borderRadius: '8px', fontSize: '0.85rem', fontWeight: 800 }}>
+                {platformPayments.filter(p => p.status === 'approved').length} VALIDÉS
+              </div>
+              <h3 style={{ margin: 0 }}>Historique des paiements</h3>
+            </div>
+            
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '1rem' }}>
+              {platformPayments.filter(p => p.status === 'approved').map(p => (
+                <div key={p.id} style={{ background: 'rgba(255,255,255,0.4)', borderRadius: '16px', padding: '1.25rem', border: '1px solid rgba(42,157,143,0.1)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
+                    <div style={{ width: '32px', height: '32px', borderRadius: '50%', background: 'rgba(42,157,143,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                      <Check size={16} color="var(--jade)" />
+                    </div>
+                    <div>
+                      <h5 style={{ margin: 0, fontSize: '0.95rem' }}>{p.profiles?.full_name}</h5>
+                      <p style={{ margin: 0, fontSize: '0.8rem', color: 'var(--text-secondary)' }}>{p.month} · {p.amount} MAD</p>
+                    </div>
+                  </div>
+                  <Badge variant="jade">Approuvé</Badge>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {(tab === 'pending' || tab === 'approved') && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+          {agencies.map(agency => {
           // Format phone number for WhatsApp
           const phoneForWa = agency.social_links?.phone ? agency.social_links.phone.replace(/[^0-9]/g,'') : null;
           // Format date joined
@@ -230,7 +435,8 @@ export default function AdminPage() {
             </div>
           );
         })}
-      </div>
+        </div>
+      )}
     </div>
   );
 }

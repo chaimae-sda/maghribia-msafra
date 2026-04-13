@@ -3,22 +3,25 @@
 import { useState, useRef, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { MapPin, Star, Wifi, Users, Calendar, Heart, BadgeCheck, Search, Filter, ChevronDown, QrCode, Clock, Camera, Plus, Check } from 'lucide-react';
+import { MapPin, Star, Wifi, Users, Calendar, Heart, BadgeCheck, Search, Filter, ChevronDown, QrCode, Clock, Camera, Plus, Check, X } from 'lucide-react';
 import Avatar from '@/components/ui/Avatar';
 import Badge from '@/components/ui/Badge';
 import Button from '@/components/ui/Button';
+import { useAuth } from '@/context/AuthContext'; // Ajout pour générer un QR unique par user
 import { hosts } from '@/data/mock/hosts';
 import styles from './page.module.css';
 
 export default function HostingPage() {
   const router = useRouter();
+  const { user } = useAuth(); // Récupération de l'user pour le QR Code
   const [selectedCity, setSelectedCity] = useState('all');
   const [showQR, setShowQR] = useState(false);
   const [showScanner, setShowScanner] = useState(false);
   const [showPublish, setShowPublish] = useState(false);
   const [showReviews, setShowReviews] = useState(null);
   const [scanSuccess, setScanSuccess] = useState(false);
-  
+  const [publishPhotoPreview, setPublishPhotoPreview] = useState(null); // Photo pour le logement
+
   const videoRef = useRef(null);
   const cities = ['all', 'Fès', 'Essaouira', 'Marrakech', 'Rabat', 'Tanger', 'Casablanca'];
 
@@ -48,6 +51,18 @@ export default function HostingPage() {
     }, 3000);
   };
 
+  const handlePublishPhotoSelect = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      setPublishPhotoPreview(URL.createObjectURL(file));
+    }
+  };
+
+  // Génération du lien de données pour le QR Code (unique par utilisateur)
+  const qrDataUrl = user
+    ? `${typeof window !== 'undefined' ? window.location.origin : ''}/checkin/${user.id}`
+    : 'https://maghribiamsafra.com';
+
   return (
     <div className={styles.hosting}>
       {/* Header */}
@@ -57,13 +72,19 @@ export default function HostingPage() {
           <p>Trouvez un accueil chaleureux chez des femmes de confiance partout au Maroc</p>
         </div>
         <div className={styles.header_actions}>
-          <Button variant="outline" onClick={() => setShowPublish(true)}>
-            <Plus size={18} />
-            Publier mon logement
+          <Button variant="outline" onClick={() => setShowPublish(true)} style={{ borderColor: 'var(--border-light)' }}>
+            {/* Alignement parfait et couleur qui s'adapte (blanc en dark mode) */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--text-primary)' }}>
+              <Plus size={18} />
+              <span>Publier mon logement</span>
+            </div>
           </Button>
           <Button variant="primary" onClick={() => setShowQR(true)}>
-            <QrCode size={18} />
-            Check-in QR
+            {/* Alignement parfait du QR avec le texte */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <QrCode size={18} />
+              <span>Check-in QR</span>
+            </div>
           </Button>
         </div>
       </div>
@@ -92,71 +113,69 @@ export default function HostingPage() {
         {hosts
           .filter(h => selectedCity === 'all' || h.city === selectedCity)
           .map(host => (
-          <article key={host.id} className={styles.hostCard}>
-            <div className={styles.hostCard_image}>
-              <img src={host.photos[0]} alt={host.name} />
-              <div className={styles.hostCard_overlay}>
-                {host.available ? (
-                  <Badge variant="jade" size="sm" dot>Disponible</Badge>
-                ) : (
-                  <Badge variant="default" size="sm">Prochaine dispo : {host.nextAvailable}</Badge>
-                )}
+            <article key={host.id} className={styles.hostCard}>
+              <div className={styles.hostCard_image}>
+                <img src={host.photos[0]} alt={host.name} />
+                {/* Le tag de disponibilité a été supprimé ici */}
+                <button className={styles.hostCard_fav}>
+                  <Heart size={18} />
+                </button>
               </div>
-              <button className={styles.hostCard_fav}>
-                <Heart size={18} />
-              </button>
-            </div>
-            <div className={styles.hostCard_body}>
-              <div className={styles.hostCard_top}>
-                <div className={styles.hostCard_user}>
-                  <Link href={`/profile/${host.userId}`}>
-                    <Avatar src={host.avatar} alt={host.name} size="md" />
-                  </Link>
-                  <div>
-                    <Link href={`/profile/${host.userId}`} className={styles.hostCard_name}>
-                      {host.name}
-                      <BadgeCheck size={14} className={styles.verified} />
+              <div className={styles.hostCard_body}>
+                <div className={styles.hostCard_top}>
+                  <div className={styles.hostCard_user}>
+                    <Link href={`/profile/${host.userId}`}>
+                      <Avatar src={host.avatar} alt={host.name} size="md" />
                     </Link>
-                    <Badge variant="gold" size="sm">{host.badge}</Badge>
+                    <div>
+                      <Link href={`/profile/${host.userId}`} className={styles.hostCard_name}>
+                        {host.name}
+                        <BadgeCheck size={14} className={styles.verified} />
+                      </Link>
+                      <Badge variant="gold" size="sm">{host.badge}</Badge>
+                    </div>
+                  </div>
+                  <div className={styles.hostCard_rating} onClick={() => setShowReviews(host)} style={{ cursor: 'pointer' }}>
+                    <Star size={16} fill="var(--saffron)" color="var(--saffron)" />
+                    <strong>{host.rating}</strong>
+                    <span>({host.reviewCount})</span>
                   </div>
                 </div>
-                <div className={styles.hostCard_rating} onClick={() => setShowReviews(host)} style={{ cursor: 'pointer' }}>
-                  <Star size={16} fill="var(--saffron)" color="var(--saffron)" />
-                  <strong>{host.rating}</strong>
-                  <span>({host.reviewCount})</span>
+
+                <div className={styles.hostCard_location}>
+                  <MapPin size={14} />
+                  <span>{host.city}, {host.neighborhood}</span>
+                </div>
+
+                <p className={styles.hostCard_desc}>{host.description}</p>
+
+                <div className={styles.hostCard_amenities}>
+                  {host.amenities.slice(0, 4).map((a, i) => (
+                    <span key={i} className={styles.amenity}>{a}</span>
+                  ))}
+                </div>
+
+                <div className={styles.hostCard_footer}>
+                  <div className={styles.hostCard_meta}>
+                    <span><Users size={14} /> Max {host.maxGuests} {host.maxGuests > 1 ? 'personnes' : 'personne'}</span>
+                    <span><Clock size={14} /> Rép. {host.responseTime}</span>
+                  </div>
+                  <Button
+                    variant="primary"
+                    size="sm"
+                    onClick={() => {
+                      // Création du lien unique et du message personnalisé
+                      const uniqueLink = `${window.location.origin}/hosting/${host.id}`;
+                      const message = `Bonjour, en réponse à votre annonce de logement (${uniqueLink}), est-ce que ce logement est toujours disponible ?`;
+                      router.push(`/messages?userId=${host.userId}&text=${encodeURIComponent(message)}`);
+                    }}
+                  >
+                    Réserver
+                  </Button>
                 </div>
               </div>
-
-              <div className={styles.hostCard_location}>
-                <MapPin size={14} />
-                <span>{host.city}, {host.neighborhood}</span>
-              </div>
-
-              <p className={styles.hostCard_desc}>{host.description}</p>
-
-              <div className={styles.hostCard_amenities}>
-                {host.amenities.slice(0, 4).map((a, i) => (
-                  <span key={i} className={styles.amenity}>{a}</span>
-                ))}
-              </div>
-
-              <div className={styles.hostCard_footer}>
-                <div className={styles.hostCard_meta}>
-                  <span><Users size={14} /> Max {host.maxGuests} {host.maxGuests > 1 ? 'personnes' : 'personne'}</span>
-                  <span><Clock size={14} /> Rép. {host.responseTime}</span>
-                </div>
-                <Button 
-                  variant={host.available ? 'primary' : 'ghost'} 
-                  size="sm" 
-                  disabled={!host.available}
-                  onClick={() => router.push(`/messages?userId=${host.userId}&text=Bonjour, ce logement [${host.title}] (${host.photos[0]}) est-il toujours disponible ?`)}
-                >
-                  {host.available ? 'Réserver' : 'Indisponible'}
-                </Button>
-              </div>
-            </div>
-          </article>
-        ))}
+            </article>
+          ))}
       </div>
 
       {/* QR Modal */}
@@ -165,7 +184,7 @@ export default function HostingPage() {
           <div className={styles.modal} onClick={e => e.stopPropagation()}>
             <h2>📱 Check-in / Check-out</h2>
             <p>Scannez le QR code de votre hôte pour confirmer votre arrivée ou départ en toute sécurité.</p>
-            
+
             {showScanner ? (
               <div className={styles.scanner_container}>
                 <video ref={videoRef} autoPlay playsInline className={styles.video_feed} />
@@ -180,9 +199,14 @@ export default function HostingPage() {
                 )}
               </div>
             ) : (
-              <div className={styles.qr_placeholder}>
-                <QrCode size={120} strokeWidth={1} />
-                <span>Votre QR Code personnel</span>
+              /* Vrai QR Code généré et aligné */
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1rem', margin: '2rem 0' }}>
+                <img
+                  src={`https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent(qrDataUrl)}`}
+                  alt="QR Code Unique"
+                  style={{ borderRadius: '12px', border: '4px solid white', boxShadow: 'var(--shadow-md)' }}
+                />
+                <span style={{ fontWeight: 500, color: 'var(--text-primary)' }}>Votre QR Code personnel</span>
               </div>
             )}
 
@@ -194,22 +218,41 @@ export default function HostingPage() {
         </div>
       )}
 
-      {/* Publish Modal */}
+      {/* Publish Modal avec Photo */}
       {showPublish && (
         <div className={styles.modal_overlay} onClick={() => setShowPublish(false)}>
           <div className={styles.modal} onClick={e => e.stopPropagation()}>
             <h2>🏡 Publier mon logement</h2>
             <p>Devenez hôte et accueillez des voyageuses du monde entier dans un esprit de solidarité.</p>
+
             <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', marginTop: '1.5rem' }}>
+
+              {/* Ajout de la photo */}
+              {publishPhotoPreview ? (
+                <div style={{ position: 'relative' }}>
+                  <img src={publishPhotoPreview} alt="Preview" style={{ width: '100%', height: '200px', objectFit: 'cover', borderRadius: '12px' }} />
+                  <button onClick={() => setPublishPhotoPreview(null)} style={{ position: 'absolute', top: 10, right: 10, background: 'rgba(0,0,0,0.6)', color: 'white', border: 'none', borderRadius: '50%', width: '30px', height: '30px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
+                    <X size={16} />
+                  </button>
+                </div>
+              ) : (
+                <label style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.5rem', padding: '2rem', border: '2px dashed var(--border-medium)', borderRadius: '12px', cursor: 'pointer', background: 'var(--bg-secondary)' }}>
+                  <Camera size={32} color="var(--majorelle)" />
+                  <span style={{ fontWeight: 500 }}>Ajouter une photo du logement</span>
+                  <input type="file" accept="image/*" onChange={handlePublishPhotoSelect} hidden />
+                </label>
+              )}
+
               <input type="text" placeholder="Titre de l'annonce" className={styles.input} />
               <div style={{ display: 'flex', gap: '1rem' }}>
                 <input type="text" placeholder="Ville" style={{ flex: 1 }} className={styles.input} />
                 <input type="text" placeholder="Quartier" style={{ flex: 1 }} className={styles.input} />
               </div>
               <textarea placeholder="Décrivez votre accueil..." className={styles.textarea} rows={4} />
-              <div style={{ display: 'flex', gap: '1rem' }}>
+
+              <div style={{ display: 'flex', gap: '1rem', marginTop: '0.5rem' }}>
                 <Button variant="primary" fullWidth onClick={() => setShowPublish(false)}>Publier</Button>
-                <Button variant="ghost" fullWidth onClick={() => setShowPublish(false)}>Annuler</Button>
+                <Button variant="ghost" fullWidth onClick={() => { setShowPublish(false); setPublishPhotoPreview(null); }}>Annuler</Button>
               </div>
             </div>
           </div>

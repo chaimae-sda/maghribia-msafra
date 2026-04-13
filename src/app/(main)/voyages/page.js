@@ -21,9 +21,37 @@ export default function VoyagesPage() {
   const [bookingSuccess, setBookingSuccess] = useState(false);
   const [activeTab, setActiveTab] = useState('agencies'); // agencies, girls
 
+  // Nouvel état pour vérifier si la voyageuse a déjà réservé ce voyage
+  const [hasAlreadyBooked, setHasAlreadyBooked] = useState(false);
+
   useEffect(() => {
     fetchTrips();
   }, []);
+
+  // Nouveau useEffect pour vérifier la réservation existante à l'ouverture du modal
+  useEffect(() => {
+    async function checkExistingBooking() {
+      if (!user || !selectedTrip) {
+        setHasAlreadyBooked(false);
+        return;
+      }
+
+      const { data } = await supabase
+        .from('bookings')
+        .select('id, status')
+        .eq('user_id', user.id)
+        .eq('trip_id', selectedTrip.id)
+        .single();
+
+      if (data) {
+        setHasAlreadyBooked(true);
+      } else {
+        setHasAlreadyBooked(false);
+      }
+    }
+
+    checkExistingBooking();
+  }, [user, selectedTrip]);
 
   async function fetchTrips() {
     const { data } = await supabase
@@ -52,14 +80,14 @@ export default function VoyagesPage() {
       </div>
 
       <div className={styles.tabs}>
-        <button 
-          onClick={() => setActiveTab('agencies')} 
+        <button
+          onClick={() => setActiveTab('agencies')}
           className={`${styles.tab} ${activeTab === 'agencies' ? styles.tab_active : ''}`}
         >
           🏨 Agences Partenaires
         </button>
-        <button 
-          onClick={() => setActiveTab('girls')} 
+        <button
+          onClick={() => setActiveTab('girls')}
           className={`${styles.tab} ${activeTab === 'girls' ? styles.tab_active : ''}`}
         >
           🎒 Voyages entre filles
@@ -108,7 +136,7 @@ export default function VoyagesPage() {
             <button className={styles.modal_close} onClick={() => { setSelectedTrip(null); setShowRib(false); setBookingSuccess(false); }}>
               <X size={20} />
             </button>
-            
+
             <div className={styles.modal_content}>
               <div className={styles.modal_image}>
                 <img src={selectedTrip.image_url || 'https://images.unsplash.com/photo-1539020140153-e479b8c22e70?w=800'} alt={selectedTrip.title} />
@@ -134,9 +162,9 @@ export default function VoyagesPage() {
                     <p className={styles.organizer_label}>Organisé par</p>
                     <p className={styles.organizer_name}>{selectedTrip.profiles?.full_name}</p>
                   </div>
-                  <Button 
-                    variant="ghost" 
-                    size="sm" 
+                  <Button
+                    variant="ghost"
+                    size="sm"
                     onClick={() => router.push(`/messages?userId=${selectedTrip.agency_id || selectedTrip.user_id}&text=Bonjour, je souhaiterais avoir plus d'informations sur le voyage : ${selectedTrip.title}`)}
                   >
                     💬 Contacter
@@ -151,8 +179,14 @@ export default function VoyagesPage() {
                 {!bookingSuccess ? (
                   <div className={styles.booking_section}>
                     {!showRib ? (
-                      <Button variant="primary" fullWidth onClick={() => setShowRib(true)}>
-                        <Ticket size={18} /> Réserver ma place
+                      // Bouton mis à jour avec la vérification hasAlreadyBooked
+                      <Button
+                        variant={hasAlreadyBooked ? "secondary" : "primary"}
+                        fullWidth
+                        disabled={hasAlreadyBooked}
+                        onClick={() => setShowRib(true)}
+                      >
+                        <Ticket size={18} /> {hasAlreadyBooked ? "Demande déjà envoyée" : "Réserver ma place"}
                       </Button>
                     ) : (
                       <div className={styles.rib_area}>
@@ -160,18 +194,18 @@ export default function VoyagesPage() {
                           <p className={styles.rib_label}>RIB de l'agence pour le virement :</p>
                           <code className={styles.rib_code}>{selectedTrip.rib || selectedTrip.profiles?.social_links?.rib || 'Non renseigné'}</code>
                         </div>
-                        
+
                         <div className={styles.upload_area}>
                           <p className={styles.upload_label}>Uploadez votre preuve de virement :</p>
                           <label className={styles.upload_btn}>
-                            <input 
-                              type="file" 
-                              accept="image/*" 
+                            <input
+                              type="file"
+                              accept="image/*"
                               onChange={async (e) => {
                                 const file = e.target.files?.[0];
                                 if (!file) return;
                                 setUploading(true);
-                                
+
                                 // Simulation d'upload (On utilise l'URL locale pour la démo)
                                 const reader = new FileReader();
                                 reader.onloadend = async () => {
@@ -181,17 +215,18 @@ export default function VoyagesPage() {
                                     payment_proof_url: reader.result, // En réel on uploaderait sur Storage
                                     status: 'pending'
                                   });
-                                  
+
                                   if (!error) {
                                     setBookingSuccess(true);
+                                    setHasAlreadyBooked(true); // Met à jour l'état local immédiatement
                                   } else {
                                     alert('Erreur lors de la réservation : ' + error.message);
                                   }
                                   setUploading(false);
                                 };
                                 reader.readAsDataURL(file);
-                              }} 
-                              hidden 
+                              }}
+                              hidden
                             />
                             {uploading ? <Loader2 className="spin" size={18} /> : <Upload size={18} />}
                             <span>Envoyer la preuve de paiement</span>
