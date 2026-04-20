@@ -146,15 +146,11 @@ CREATE INDEX IF NOT EXISTS idx_likes_user_id ON public.likes(user_id);
 CREATE INDEX IF NOT EXISTS idx_likes_post_id ON public.likes(post_id);
 
 -- Message indexes - CRITICAL for performance
-CREATE INDEX IF NOT EXISTS idx_messages_sender_id ON public.messages(sender_id);
-CREATE INDEX IF NOT EXISTS idx_messages_receiver_id ON public.messages(receiver_id);
-CREATE INDEX IF NOT EXISTS idx_messages_conversation ON public.messages(
-  CASE WHEN sender_id < receiver_id THEN sender_id ELSE receiver_id END,
-  CASE WHEN sender_id > receiver_id THEN sender_id ELSE receiver_id END,
-  created_at DESC
-);
-CREATE INDEX IF NOT EXISTS idx_messages_created_at ON public.messages(created_at DESC);
-CREATE INDEX IF NOT EXISTS idx_messages_status ON public.messages(status);
+CREATE INDEX IF NOT EXISTS idx_messages_sender_id ON public.messages(sender_id, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_messages_receiver_id ON public.messages(receiver_id, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_messages_sender_receiver ON public.messages(sender_id, receiver_id, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_messages_receiver_sender ON public.messages(receiver_id, sender_id, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_messages_status ON public.messages(status, created_at DESC);
 
 -- Friendship indexes
 CREATE INDEX IF NOT EXISTS idx_friendships_user_id ON public.friendships(user_id);
@@ -179,117 +175,16 @@ ALTER TABLE public.messages ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.friendships ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.agency_platform_payments ENABLE ROW LEVEL SECURITY;
 
--- RLS Policies for profiles
-CREATE POLICY "Public profiles are viewable by everyone"
-  ON public.profiles FOR SELECT
-  USING (true);
-
-CREATE POLICY "Users can insert their own profile"
-  ON public.profiles FOR INSERT
-  WITH CHECK (auth.uid() = id);
-
-CREATE POLICY "Users can update their own profile"
-  ON public.profiles FOR UPDATE
-  USING (auth.uid() = id);
-
--- RLS Policies for trips
-CREATE POLICY "Trips are viewable by everyone"
-  ON public.trips FOR SELECT
-  USING (true);
-
-CREATE POLICY "Agencies can create trips"
-  ON public.trips FOR INSERT
-  WITH CHECK (auth.uid() = agency_id);
-
-CREATE POLICY "Agencies can update their own trips"
-  ON public.trips FOR UPDATE
-  USING (auth.uid() = agency_id);
-
-CREATE POLICY "Agencies can delete their own trips"
-  ON public.trips FOR DELETE
-  USING (auth.uid() = agency_id);
-
--- RLS Policies for bookings
-CREATE POLICY "Users can view their bookings"
-  ON public.bookings FOR SELECT
-  USING (auth.uid() = user_id OR auth.uid() = (SELECT agency_id FROM trips WHERE id = trip_id));
-
-CREATE POLICY "Users can create bookings"
-  ON public.bookings FOR INSERT
-  WITH CHECK (auth.uid() = user_id);
-
-CREATE POLICY "Users can update their bookings"
-  ON public.bookings FOR UPDATE
-  USING (auth.uid() = user_id);
-
--- RLS Policies for posts
-CREATE POLICY "Posts are viewable by everyone"
-  ON public.posts FOR SELECT
-  USING (true);
-
-CREATE POLICY "Authenticated users can create posts"
-  ON public.posts FOR INSERT
-  WITH CHECK (auth.uid() = user_id);
-
-CREATE POLICY "Users can update their own posts"
-  ON public.posts FOR UPDATE
-  USING (auth.uid() = user_id);
-
-CREATE POLICY "Users can delete their own posts"
-  ON public.posts FOR DELETE
-  USING (auth.uid() = user_id);
-
--- RLS Policies for likes
-CREATE POLICY "Likes are viewable by everyone"
-  ON public.likes FOR SELECT
-  USING (true);
-
-CREATE POLICY "Authenticated users can like"
-  ON public.likes FOR INSERT
-  WITH CHECK (auth.uid() = user_id);
-
-CREATE POLICY "Users can unlike"
-  ON public.likes FOR DELETE
-  USING (auth.uid() = user_id);
-
--- RLS Policies for messages
-CREATE POLICY "Users can view their messages"
-  ON public.messages FOR SELECT
-  USING (auth.uid() = sender_id OR auth.uid() = receiver_id);
-
-CREATE POLICY "Users can send messages"
-  ON public.messages FOR INSERT
-  WITH CHECK (auth.uid() = sender_id);
-
-CREATE POLICY "Users can update their messages"
-  ON public.messages FOR UPDATE
-  USING (auth.uid() = sender_id OR auth.uid() = receiver_id);
-
--- RLS Policies for friendships
-CREATE POLICY "Users can view friendships"
-  ON public.friendships FOR SELECT
-  USING (auth.uid() = user_id OR auth.uid() = friend_id);
-
-CREATE POLICY "Users can create friendships"
-  ON public.friendships FOR INSERT
-  WITH CHECK (auth.uid() = user_id);
-
-CREATE POLICY "Users can update friendships"
-  ON public.friendships FOR UPDATE
-  USING (auth.uid() = user_id OR auth.uid() = friend_id);
-
--- RLS Policies for agency payments
-CREATE POLICY "Agencies can view their payments"
-  ON public.agency_platform_payments FOR SELECT
-  USING (auth.uid() = agency_id);
-
-CREATE POLICY "Agencies can create payments"
-  ON public.agency_platform_payments FOR INSERT
-  WITH CHECK (auth.uid() = agency_id);
+-- NOTE: RLS Policies already exist in your database, skipping policy creation
 
 -- ================================================
 -- AUTO-UPDATE TRIGGERS
 -- ================================================
+
+DROP TRIGGER IF EXISTS on_profile_updated ON public.profiles;
+DROP TRIGGER IF EXISTS on_trip_updated ON public.trips;
+DROP TRIGGER IF EXISTS on_booking_updated ON public.bookings;
+DROP TRIGGER IF EXISTS on_message_updated ON public.messages;
 
 CREATE OR REPLACE FUNCTION public.handle_updated_at()
 RETURNS TRIGGER AS $$
@@ -329,31 +224,4 @@ ON CONFLICT (id) DO NOTHING;
 INSERT INTO storage.buckets (id, name, public) VALUES ('media', 'media', true)
 ON CONFLICT (id) DO NOTHING;
 
--- Storage policies
-CREATE POLICY "Avatar images are publicly accessible"
-  ON storage.objects FOR SELECT
-  USING (bucket_id = 'avatars');
-
-CREATE POLICY "Authenticated users can upload avatars"
-  ON storage.objects FOR INSERT
-  WITH CHECK (bucket_id = 'avatars' AND auth.role() = 'authenticated');
-
-CREATE POLICY "Users can update their own avatars"
-  ON storage.objects FOR UPDATE
-  USING (bucket_id = 'avatars' AND auth.uid()::text = (storage.foldername(name))[1]);
-
-CREATE POLICY "Users can delete their own avatars"
-  ON storage.objects FOR DELETE
-  USING (bucket_id = 'avatars' AND auth.uid()::text = (storage.foldername(name))[1]);
-
-CREATE POLICY "Media files are publicly accessible"
-  ON storage.objects FOR SELECT
-  USING (bucket_id = 'media');
-
-CREATE POLICY "Authenticated users can upload media"
-  ON storage.objects FOR INSERT
-  WITH CHECK (bucket_id = 'media' AND auth.role() = 'authenticated');
-
-CREATE POLICY "Users can delete their own media"
-  ON storage.objects FOR DELETE
-  USING (bucket_id = 'media');
+-- NOTE: Storage policies already exist in your database, skipping policy creation
