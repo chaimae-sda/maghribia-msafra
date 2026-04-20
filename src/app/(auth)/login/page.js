@@ -8,7 +8,7 @@ import Button from '@/components/ui/Button';
 import { useAuth } from '@/context/AuthContext';
 import styles from './page.module.css';
 
-function LoginPageContent() {
+function LoginContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { signIn, signInWithGoogle, user, profile } = useAuth();
@@ -212,13 +212,5 @@ function LoginPageContent() {
         </div>
       </div>
     </div>
-  );
-}
-
-export default function LoginPage() {
-  return (
-    <Suspense fallback={<div>Chargement...</div>}>
-      <LoginPageContent />
-    </Suspense>
   );
 }
