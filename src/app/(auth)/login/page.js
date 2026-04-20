@@ -80,10 +80,10 @@ function LoginContent() {
     setLoading(true);
     setError('');
     try {
-      // Get the correct redirect URL
+      // Redirect to feed after Google OAuth (already authenticated)
       const redirectUrl = typeof window !== 'undefined' 
-        ? `${window.location.origin}/register` 
-        : 'http://localhost:3000/register';
+        ? `${window.location.origin}/feed` 
+        : 'http://localhost:3000/feed';
       
       await signInWithGoogle(redirectUrl);
     } catch (err) {
