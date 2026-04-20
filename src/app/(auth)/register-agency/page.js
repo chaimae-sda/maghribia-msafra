@@ -7,7 +7,7 @@ import { ArrowRight, Building2, Mail, Lock, Phone, MapPin, FileText, Loader2 } f
 import Button from '@/components/ui/Button';
 import { useAuth } from '@/context/AuthContext';
 import { supabase } from '@/lib/supabase';
-import styles from '../login/page.module.css';
+import styles from './page.module.css';
 
 export default function RegisterAgencyPage() {
   const router = useRouter();
@@ -83,15 +83,31 @@ export default function RegisterAgencyPage() {
   if (success) {
     return (
       <div className={styles.auth}>
-        <div className={styles.auth_right} style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <div className={styles.auth_left}>
+          <div className={styles.auth_bg}>
+            <img src="/hero-bg.png" alt="" />
+            <div className={styles.auth_overlay} />
+          </div>
+          <div className={styles.auth_brand}>
+            <Link href="/" className={styles.auth_logo}>
+              <Building2 size={28} color="#38bdf8" />
+              <span>Maghribia <strong>Msafra Business</strong></span>
+            </Link>
+            <h2>Inscription Confirmée</h2>
+            <p>Votre demande a été reçue avec succès.</p>
+          </div>
+        </div>
+        <div className={styles.auth_right}>
           <div className={styles.auth_form_container} style={{ textAlign: 'center' }}>
             <div style={{ fontSize: '4rem', marginBottom: '1rem' }}>✅</div>
-            <h1 style={{ marginBottom: '1rem' }}>Demande envoyée !</h1>
-            <p style={{ color: '#666', marginBottom: '2rem' }}>
+            <h1 style={{ marginBottom: '1rem', color: '#fff' }}>Demande envoyée !</h1>
+            <p style={{ color: '#94a3b8', marginBottom: '2rem' }}>
               Votre demande d'inscription a été envoyée avec succès. Notre équipe va examiner votre dossier et vous recevrez une notification dès que votre agence sera approuvée.
             </p>
             <Link href="/">
-              <Button variant="primary">Retour à l'accueil</Button>
+              <button className={styles.btn_submit} style={{ width: '100%' }}>
+                Retour à l'accueil
+              </button>
             </Link>
           </div>
         </div>
@@ -108,11 +124,13 @@ export default function RegisterAgencyPage() {
         </div>
         <div className={styles.auth_brand}>
           <Link href="/" className={styles.auth_logo}>
-            <img src="/logo.png" alt="Logo" width={64} height={64} />
-            <span>Maghribia <strong>Msafra</strong></span>
+            <Building2 size={28} color="#38bdf8" />
+            <span>Maghribia <strong>Msafra Business</strong></span>
           </Link>
-          <h2>Espace Agences 🏢</h2>
-          <p>Inscrivez votre agence de voyage et accédez à des milliers de voyageuses.</p>
+          <h2>Espace Agences Partenaires</h2>
+          <p>
+            Gérez vos offres, touchez des milliers de voyageuses et développez votre activité en toute simplicité.
+          </p>
         </div>
       </div>
 
@@ -175,32 +193,37 @@ export default function RegisterAgencyPage() {
             </div>
             <div className={styles.field}>
               <label>Logo de l'agence</label>
-              <div className={styles.inputWrap} style={{ padding: '8px' }}>
+              <div className={styles.inputWrap}>
+                <FileText size={18} />
                 <input 
                   type="file" 
                   accept="image/*" 
                   onChange={e => setLogoFile(e.target.files[0])}
-                  style={{ border: 'none', background: 'transparent' }}
+                  placeholder="Sélectionner un logo"
                 />
+                {logoFile && <span className={styles.fileName}>{logoFile.name}</span>}
               </div>
             </div>
 
             <div className={styles.field}>
               <label>Description de l'agence</label>
-              <textarea
-                placeholder="Décrivez votre agence, vos spécialités..."
-                value={form.description}
-                onChange={e => update('description', e.target.value)}
-                rows={3}
-                style={{ width: '100%', padding: '0.75rem', borderRadius: '10px', border: '1px solid rgba(0,0,0,0.1)', fontFamily: 'inherit', fontSize: '0.95rem', resize: 'vertical' }}
-              />
+              <div className={styles.inputWrap}>
+                <textarea
+                  placeholder="Décrivez votre agence, vos spécialités..."
+                  value={form.description}
+                  onChange={e => update('description', e.target.value)}
+                  rows={3}
+                />
+              </div>
             </div>
 
-            <Button variant="primary" size="lg" fullWidth disabled={loading}
-              iconRight={loading ? <Loader2 size={18} className="spin" /> : <ArrowRight size={18} />}
+            <button
+              type="submit"
+              className={styles.btn_submit}
+              disabled={loading}
             >
-              {loading ? 'Envoi en cours...' : 'Soumettre ma demande'}
-            </Button>
+              {loading ? <><Loader2 size={18} className="spin" /> Envoi en cours...</> : <>Soumettre ma demande <ArrowRight size={18} /></>}
+            </button>
 
             <p className={styles.auth_switch}>
               Vous êtes une voyageuse ? <Link href="/register">S'inscrire ici</Link>
