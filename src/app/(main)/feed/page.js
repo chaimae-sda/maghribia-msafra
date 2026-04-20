@@ -68,125 +68,165 @@ export default function FeedPage() {
   }
 
   async function fetchSuggestions() {
-    const { data } = await supabase
-      .from('profiles')
-      .select('id, full_name, avatar_url, city')
-      .neq('id', user?.id || 'guest')
-      .eq('role', 'traveler')
-      .limit(5);
+    try {
+      const { data } = await supabase
+        .from('profiles')
+        .select('id, full_name, avatar_url, city')
+        .neq('id', user?.id || '')
+        .eq('role', 'traveler')
+        .limit(5);
 
-    const dbSuggestions = data || [];
-    const virtualSuggestions = Object.values(virtualUsers).map(u => ({
-      id: u.id,
-      full_name: u.full_name,
-      avatar_url: u.avatar_url,
-      city: u.city,
-      is_ambassador: true
-    }));
+      const dbSuggestions = data || [];
+      const virtualSuggestions = Object.values(virtualUsers).map(u => ({
+        id: u.id,
+        full_name: u.full_name,
+        avatar_url: u.avatar_url,
+        city: u.city,
+        is_ambassador: true
+      }));
 
-    setSuggestions([...virtualSuggestions, ...dbSuggestions]);
+      setSuggestions([...virtualSuggestions, ...dbSuggestions]);
+    } catch (err) {
+      console.error('Error fetching suggestions:', err);
+      // Fallback to virtual users only
+      const virtualSuggestions = Object.values(virtualUsers).slice(0, 5).map(u => ({
+        id: u.id,
+        full_name: u.full_name,
+        avatar_url: u.avatar_url,
+        city: u.city,
+        is_ambassador: true
+      }));
+      setSuggestions(virtualSuggestions);
+    }
   }
 
   async function fetchPosts() {
-    setLoadingPosts(true);
+    try {
+      setLoadingPosts(true);
 
-    if (!user) {
-      const dummyPosts = Object.values(virtualUsers).flatMap(u => (u.posts || []).map(p => ({
-        id: `dummy-${p.id}`,
-        userId: u.id,
-        userName: u.full_name,
-        userAvatar: u.avatar_url,
-        city: u.city,
-        timeAgo: 'il y a 2h',
-        content: p.content,
-        image: p.image_url,
-        likes: Math.floor(Math.random() * 50) + 10,
-        comments: Math.floor(Math.random() * 10) + 2,
-        liked: false,
-        tags: p.content.match(/#(\w|[À-ÿ])+/g)?.map(t => t.replace('#', '')) || [],
-        comments_data: (u.comments || []).map(c => ({
-          id: c.id,
-          user: virtualUsers[c.userId]?.full_name || 'Amie',
-          avatar: virtualUsers[c.userId]?.avatar_url,
-          content: c.content
-        }))
-      })));
-      setFeedPosts(dummyPosts);
-      calculateTrends(dummyPosts);
-      setLoadingPosts(false);
-      return;
-    }
-
-    const { data } = await supabase
-      .from('posts')
-      .select('*, profiles(full_name, avatar_url, city, is_ambassador), likes(user_id)')
-      .eq('is_archived', false)
-      .order('created_at', { ascending: false });
-
-    let finalPosts = [];
-
-    if (data && data.length > 0) {
-      const { data: allComments } = await supabase
-        .from('comments')
-        .select('*, profiles(full_name, avatar_url)')
-        .in('post_id', data.map(p => p.id));
-
-      finalPosts = data.map(p => {
-        const hashtags = p.content.match(/#(\w|[À-ÿ])+/g) || [];
-        const postComments = (allComments || []).filter(c => c.post_id === p.id);
-        const userHasLiked = (p.likes || []).some(l => l.user_id === user?.id);
-
-        return {
-          id: p.id,
-          userId: p.user_id,
-          userName: p.profiles?.full_name || 'Chaimae Saadi',
-          userAvatar: p.profiles?.avatar_url,
-          city: p.city || 'Maroc',
-          timeAgo: 'récent',
+      if (!user) {
+        const dummyPosts = Object.values(virtualUsers).flatMap(u => (u.posts || []).map(p => ({
+          id: `dummy-${p.id}`,
+          userId: u.id,
+          userName: u.full_name,
+          userAvatar: u.avatar_url,
+          city: u.city,
+          timeAgo: 'il y a 2h',
           content: p.content,
           image: p.image_url,
-          likes: p.likes_count || (p.likes ? p.likes.length : 0),
-          comments: p.comments_count || postComments.length,
-          liked: userHasLiked,
-          tags: hashtags.map(t => t.replace('#', '')),
-          comments_disabled: p.comments_disabled,
-          comments_data: postComments.map(c => ({
+          likes: Math.floor(Math.random() * 50) + 10,
+          comments: Math.floor(Math.random() * 10) + 2,
+          liked: false,
+          tags: p.content.match(/#(\w|[À-ÿ])+/g)?.map(t => t.replace('#', '')) || [],
+          comments_data: (u.comments || []).map(c => ({
             id: c.id,
-            user: c.profiles?.full_name || 'Utilisatrice',
-            userId: c.user_id,
-            avatar: c.profiles?.avatar_url,
+            user: virtualUsers[c.userId]?.full_name || 'Amie',
+            avatar: virtualUsers[c.userId]?.avatar_url,
             content: c.content
           }))
-        };
-      });
-    }
+        })));
+        setFeedPosts(dummyPosts);
+        calculateTrends(dummyPosts);
+        setLoadingPosts(false);
+        return;
+      }
 
-    setFeedPosts(finalPosts);
-    calculateTrends(finalPosts);
-    setLoadingPosts(false);
+      const { data, error: postsError } = await supabase
+        .from('posts')
+        .select('*, profiles(full_name, avatar_url, city, is_ambassador), likes(user_id)')
+        .eq('is_archived', false)
+        .order('created_at', { ascending: false });
+
+      if (postsError) {
+        console.error('Error fetching posts:', postsError);
+        setFeedPosts([]);
+        setLoadingPosts(false);
+        return;
+      }
+
+      let finalPosts = [];
+
+      if (data && data.length > 0) {
+        const { data: allComments, error: commentsError } = await supabase
+          .from('comments')
+          .select('*, profiles(full_name, avatar_url)')
+          .in('post_id', data.map(p => p.id));
+
+        if (commentsError) {
+          console.error('Error fetching comments:', commentsError);
+        }
+
+        finalPosts = data.map(p => {
+          const hashtags = p.content.match(/#(\w|[À-ÿ])+/g) || [];
+          const postComments = (allComments || []).filter(c => c.post_id === p.id);
+          const userHasLiked = (p.likes || []).some(l => l.user_id === user?.id);
+
+          return {
+            id: p.id,
+            userId: p.user_id,
+            userName: p.profiles?.full_name || 'Chaimae Saadi',
+            userAvatar: p.profiles?.avatar_url,
+            city: p.city || 'Maroc',
+            timeAgo: 'récent',
+            content: p.content,
+            image: p.image_url,
+            likes: p.likes_count || (p.likes ? p.likes.length : 0),
+            comments: p.comments_count || postComments.length,
+            liked: userHasLiked,
+            tags: hashtags.map(t => t.replace('#', '')),
+            comments_disabled: p.comments_disabled,
+            comments_data: postComments.map(c => ({
+              id: c.id,
+              user: c.profiles?.full_name || 'Utilisatrice',
+              userId: c.user_id,
+              avatar: c.profiles?.avatar_url,
+              content: c.content
+            }))
+          };
+        });
+      }
+
+      setFeedPosts(finalPosts);
+      calculateTrends(finalPosts);
+      setLoadingPosts(false);
+    } catch (err) {
+      console.error('Error in fetchPosts:', err);
+      setFeedPosts([]);
+      setLoadingPosts(false);
+    }
   }
 
   async function fetchStories() {
-    const { data } = await supabase
-      .from('stories')
-      .select('*, profiles!stories_user_id_fkey(full_name, avatar_url)')
-      .gt('expires_at', new Date().toISOString())
-      .order('created_at', { ascending: false });
+    try {
+      const { data, error } = await supabase
+        .from('stories')
+        .select('*, profiles!stories_user_id_fkey(full_name, avatar_url)')
+        .gt('expires_at', new Date().toISOString())
+        .order('created_at', { ascending: false });
 
-    if (data) {
-      const grouped = {};
-      data.forEach(s => {
-        if (!grouped[s.user_id]) {
-          grouped[s.user_id] = {
-            userId: s.user_id,
-            userName: s.profiles?.full_name || 'Anonyme',
-            userAvatar: s.profiles?.avatar_url,
-            stories: []
-          };
-        }
-        grouped[s.user_id].stories.push(s);
-      });
-      setRealStories(Object.values(grouped));
+      if (error) {
+        console.error('Error fetching stories:', error);
+        return;
+      }
+
+      if (data) {
+        const grouped = {};
+        data.forEach(s => {
+          if (!grouped[s.user_id]) {
+            grouped[s.user_id] = {
+              userId: s.user_id,
+              userName: s.profiles?.full_name || 'Anonyme',
+              userAvatar: s.profiles?.avatar_url,
+              stories: []
+            };
+          }
+          grouped[s.user_id].stories.push(s);
+        });
+        setRealStories(Object.values(grouped));
+      }
+    } catch (err) {
+      console.error('Error in fetchStories:', err);
+      setRealStories([]);
     }
   }
 
