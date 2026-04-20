@@ -81,6 +81,16 @@ CREATE TABLE IF NOT EXISTS public.likes (
   UNIQUE(user_id, post_id)
 );
 
+-- 5.5. Comments Table
+CREATE TABLE IF NOT EXISTS public.comments (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  user_id UUID REFERENCES public.profiles(id) ON DELETE CASCADE NOT NULL,
+  post_id UUID REFERENCES public.posts(id) ON DELETE CASCADE NOT NULL,
+  content TEXT NOT NULL,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
 -- 6. Messages Table
 CREATE TABLE IF NOT EXISTS public.messages (
   id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
@@ -144,6 +154,11 @@ CREATE INDEX IF NOT EXISTS idx_posts_created_at ON public.posts(created_at DESC)
 -- Like indexes
 CREATE INDEX IF NOT EXISTS idx_likes_user_id ON public.likes(user_id);
 CREATE INDEX IF NOT EXISTS idx_likes_post_id ON public.likes(post_id);
+
+-- Comment indexes
+CREATE INDEX IF NOT EXISTS idx_comments_user_id ON public.comments(user_id);
+CREATE INDEX IF NOT EXISTS idx_comments_post_id ON public.comments(post_id);
+CREATE INDEX IF NOT EXISTS idx_comments_created_at ON public.comments(post_id, created_at ASC);
 
 -- Message indexes - CRITICAL for performance
 CREATE INDEX IF NOT EXISTS idx_messages_sender_id ON public.messages(sender_id, created_at DESC);
