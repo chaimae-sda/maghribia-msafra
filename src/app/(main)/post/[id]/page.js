@@ -30,6 +30,8 @@ export default function PostDetailPage() {
 
   async function fetchPost() {
     try {
+      setLoading(true);
+      
       // First try to fetch from database
       const { data: interactionData, error: dbError } = await supabase
         .from('posts')
@@ -37,14 +39,18 @@ export default function PostDetailPage() {
         .eq('id', id)
         .single();
 
+      if (dbError && dbError.code !== 'PGRST116') {
+        console.error('Database error:', dbError);
+      }
+
       if (interactionData) {
         setPost({
           ...interactionData,
           user_id: interactionData.user_id,
           profiles: interactionData.profiles
         });
-        fetchComments();
-        fetchLikes();
+        fetchComments(id);
+        fetchLikes(id);
         setLoading(false);
         return;
       }
@@ -72,7 +78,7 @@ export default function PostDetailPage() {
         setLikesCount(mockPost.likes || 0);
         setLiked(mockPost.liked || false);
         
-        // Mock comments (you can add real comments in the future)
+        // Mock comments
         setComments([
           {
             id: 'c1',
@@ -97,18 +103,23 @@ export default function PostDetailPage() {
       setLoading(false);
     } catch (err) {
       console.error('Error fetching post:', err);
-      setError(err.message);
+      setError('Erreur lors du chargement du post');
       setLoading(false);
     }
   }
 
-  async function fetchComments() {
+  async function fetchComments(postId) {
     try {
-      const { data } = await supabase
+      const { data, error } = await supabase
         .from('comments')
         .select('*, profiles(id, full_name, avatar_url)')
-        .eq('post_id', id)
+        .eq('post_id', postId)
         .order('created_at', { ascending: true });
+      
+      if (error) {
+        console.error('Error fetching comments:', error);
+        return;
+      }
       
       if (data) {
         setComments(data.map(c => ({
@@ -120,23 +131,28 @@ export default function PostDetailPage() {
         })));
       }
     } catch (err) {
-      console.error('Error fetching comments:', err);
+      console.error('Error in fetchComments:', err);
     }
   }
 
-  async function fetchLikes() {
+  async function fetchLikes(postId) {
     try {
-      const { count, data } = await supabase
+      const { count, data, error } = await supabase
         .from('likes')
         .select('user_id', { count: 'exact' })
-        .eq('post_id', id);
+        .eq('post_id', postId);
+      
+      if (error) {
+        console.error('Error fetching likes:', error);
+        return;
+      }
       
       setLikesCount(count || 0);
       if (data && user) {
         setLiked(data.some(l => l.user_id === user.id));
       }
     } catch (err) {
-      console.error('Error fetching likes:', err);
+      console.error('Error in fetchLikes:', err);
     }
   }
 
@@ -193,20 +209,6 @@ export default function PostDetailPage() {
     } catch (err) {
       console.error('Error adding comment:', err);
       alert('Erreur lors de l\'ajout du commentaire');
-    }
-  }
-      .select('*, profiles(full_name, avatar_url)')
-      .single();
-
-    if (data) {
-      setComments(prev => [...prev, {
-        id: data.id,
-        user: data.profiles?.full_name || 'Moi',
-        userId: data.user_id,
-        avatar: data.profiles?.avatar_url,
-        content: data.content
-      }]);
-      setNewComment('');
     }
   }
 
