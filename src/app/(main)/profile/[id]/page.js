@@ -323,7 +323,20 @@ export default function PublicProfilePage({ params }) {
             <h2>Publications</h2>
             <div className={styles.posts_list}>
               {posts.map(post => (
-                <div key={post.id} className={styles.post_card}>
+                <div 
+                  key={post.id} 
+                  className={styles.post_card}
+                  onClick={() => router.push(`/post/${post.id}`)}
+                  style={{ cursor: 'pointer', transition: 'transform 0.2s, box-shadow 0.2s' }}
+                  onMouseOver={e => {
+                    e.currentTarget.style.transform = 'translateY(-4px)';
+                    e.currentTarget.style.boxShadow = '0 12px 24px rgba(0,0,0,0.15)';
+                  }}
+                  onMouseOut={e => {
+                    e.currentTarget.style.transform = 'translateY(0)';
+                    e.currentTarget.style.boxShadow = 'var(--shadow-sm)';
+                  }}
+                >
                   {post.image_url && (
                     <div style={{ marginBottom: '1rem', borderRadius: '12px', overflow: 'hidden' }}>
                       {post.image_url.match(/\.(mp4|mov|webm)$/) ? (

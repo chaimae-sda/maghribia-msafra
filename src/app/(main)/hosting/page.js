@@ -15,6 +15,8 @@ export default function HostingPage() {
   const router = useRouter();
   const { user } = useAuth(); // Récupération de l'user pour le QR Code
   const [selectedCity, setSelectedCity] = useState('all');
+  const [selectedDate, setSelectedDate] = useState('all');
+  const [minCapacity, setMinCapacity] = useState('all');
   const [showQR, setShowQR] = useState(false);
   const [showScanner, setShowScanner] = useState(false);
   const [showPublish, setShowPublish] = useState(false);
@@ -95,23 +97,72 @@ export default function HostingPage() {
           <Search size={20} />
           <input type="text" placeholder="Rechercher une ville ou un quartier..." />
         </div>
-        <div className={styles.cityFilters}>
-          {cities.map(c => (
-            <button
-              key={c}
-              className={`${styles.cityFilter} ${selectedCity === c ? styles.cityFilter_active : ''}`}
-              onClick={() => setSelectedCity(c)}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: '1rem', marginTop: '1.5rem' }}>
+          {/* City Filter */}
+          <div>
+            <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)', display: 'block', marginBottom: '0.5rem', textTransform: 'uppercase' }}>Ville</label>
+            <select 
+              value={selectedCity} 
+              onChange={(e) => setSelectedCity(e.target.value)}
+              style={{ width: '100%', padding: '0.65rem', borderRadius: '8px', border: '1px solid var(--border-light)', background: 'var(--bg-card)', color: 'var(--text-primary)', cursor: 'pointer', fontSize: '0.9rem', fontWeight: 500 }}
             >
-              {c === 'all' ? 'Toutes les villes' : c}
-            </button>
-          ))}
+              {cities.map(c => (
+                <option key={c} value={c}>{c === 'all' ? 'Toutes les villes' : c}</option>
+              ))}
+            </select>
+          </div>
+          
+          {/* Date Filter */}
+          <div>
+            <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)', display: 'block', marginBottom: '0.5rem', textTransform: 'uppercase' }}>Disponibilité</label>
+            <select 
+              value={selectedDate} 
+              onChange={(e) => setSelectedDate(e.target.value)}
+              style={{ width: '100%', padding: '0.65rem', borderRadius: '8px', border: '1px solid var(--border-light)', background: 'var(--bg-card)', color: 'var(--text-primary)', cursor: 'pointer', fontSize: '0.9rem', fontWeight: 500 }}
+            >
+              <option value="all">Tout moment</option>
+              <option value="this_week">Cette semaine</option>
+              <option value="this_month">Ce mois</option>
+              <option value="flexible">Flexible</option>
+            </select>
+          </div>
+          
+          {/* Capacity Filter */}
+          <div>
+            <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)', display: 'block', marginBottom: '0.5rem', textTransform: 'uppercase' }}>Capacité min.</label>
+            <select 
+              value={minCapacity} 
+              onChange={(e) => setMinCapacity(e.target.value)}
+              style={{ width: '100%', padding: '0.65rem', borderRadius: '8px', border: '1px solid var(--border-light)', background: 'var(--bg-card)', color: 'var(--text-primary)', cursor: 'pointer', fontSize: '0.9rem', fontWeight: 500 }}
+            >
+              <option value="all">Toute capacité</option>
+              <option value="1">1 personne</option>
+              <option value="2">2+ personnes</option>
+              <option value="3">3+ personnes</option>
+              <option value="4">4+ personnes</option>
+            </select>
+          </div>
         </div>
       </div>
 
       {/* Host Grid */}
       <div className={styles.hostGrid}>
         {hosts
-          .filter(h => selectedCity === 'all' || h.city === selectedCity)
+          .filter(h => {
+            // City filter
+            if (selectedCity !== 'all' && h.city !== selectedCity) return false;
+            
+            // Capacity filter
+            if (minCapacity !== 'all' && h.maxGuests < parseInt(minCapacity)) return false;
+            
+            // Date filter (assuming hosts with availability field or all are available by default)
+            if (selectedDate === 'this_week' || selectedDate === 'this_month' || selectedDate === 'flexible') {
+              // For now, show all hosts for date filter (expand when availability data is added)
+              return true;
+            }
+            
+            return true;
+          })
           .map(host => (
             <article key={host.id} className={styles.hostCard}>
               <div className={styles.hostCard_image}>
