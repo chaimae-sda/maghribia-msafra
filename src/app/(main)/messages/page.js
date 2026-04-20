@@ -197,7 +197,7 @@ function MessagesContent() {
     fetchMessages();
 
     const msgSub = supabase.channel(`chat_${activeChat.friendId}`)
-      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages' }, payload => {
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages' }, async (payload) => {
         const msg = payload.new;
         if ((msg.sender_id === user.id && msg.receiver_id === activeChat.friendId) ||
           (msg.sender_id === activeChat.friendId && msg.receiver_id === user.id)) {
@@ -205,8 +205,9 @@ function MessagesContent() {
             if (prev.find(m => m.id === msg.id)) return prev;
             return [...prev, msg];
           });
+          // If this message is for the current user, mark it as read
           if (msg.receiver_id === user.id) {
-            supabase.from('messages').update({ status: 'read' }).eq('id', msg.id).then();
+            await supabase.from('messages').update({ status: 'read' }).eq('id', msg.id);
           }
         }
       })
@@ -226,6 +227,7 @@ function MessagesContent() {
 
     if (data) {
       setMessages(data);
+      // Mark all unread messages from the other user as read
       const unreadIds = data.filter(m => m.receiver_id === user.id && m.status !== 'read').map(m => m.id);
       if (unreadIds.length > 0) {
         await supabase.from('messages').update({ status: 'read' }).in('id', unreadIds);
