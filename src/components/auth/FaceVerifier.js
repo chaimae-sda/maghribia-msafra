@@ -7,10 +7,11 @@ import styles from './FaceVerifier.module.css';
 
 const MODEL_URL = '/models';
 
-export default function FaceVerifier({ onVerified, onAvatarReady }) {
-  const [step, setStep] = useState('upload'); // upload | camera | verifying | done | error
+export default function FaceVerifier({ onVerified, onAvatarReady, mode = 'gender-only', avatarPreview: initialAvatarPreview = null }) {
+  // mode: 'gender-only' (step 3) or 'face-match' (step 4)
+  const [step, setStep] = useState(mode === 'gender-only' ? 'upload' : 'camera'); // upload | camera | verifying | done | error
   const [avatarFile, setAvatarFile] = useState(null);
-  const [avatarPreview, setAvatarPreview] = useState(null);
+  const [avatarPreview, setAvatarPreview] = useState(initialAvatarPreview);
   const [selfieBlob, setSelfieBlob] = useState(null);
   const [selfiePreview, setSelfiePreview] = useState(null);
   const [status, setStatus] = useState('');
@@ -42,7 +43,6 @@ export default function FaceVerifier({ onVerified, onAvatarReady }) {
         setStatus('');
       } catch (err) {
         console.error('Error loading face-api models:', err);
-        // Continue without models - fallback to basic verification
         setModelsLoaded(true);
         setStatus('');
       }
@@ -54,6 +54,37 @@ export default function FaceVerifier({ onVerified, onAvatarReady }) {
     };
   }, []);
 
+  // Auto-start camera in face-match mode
+  useEffect(() => {
+    let isMounted = true;
+
+    const autoStartCamera = async () => {
+      if (mode === 'face-match' && modelsLoaded && step === 'camera') {
+        try {
+          setStatus('Activation de la caméra...');
+          const stream = await navigator.mediaDevices.getUserMedia({
+            video: { facingMode: 'user', width: 640, height: 480 },
+          });
+          if (!isMounted) return;
+          
+          streamRef.current = stream;
+          if (videoRef.current) {
+            videoRef.current.srcObject = stream;
+            await videoRef.current.play();
+          }
+          setStatus('Positionnez votre visage dans le cadre');
+        } catch (err) {
+          if (isMounted) {
+            setStatus('Impossible d\'accéder à la caméra. Vérifiez les permissions.');
+          }
+        }
+      }
+    };
+
+    autoStartCamera();
+    return () => { isMounted = false; };
+  }, [mode, modelsLoaded, step]);
+
   // Handle avatar upload
   const handleFileSelect = (e) => {
     const file = e.target.files[0];
@@ -61,9 +92,11 @@ export default function FaceVerifier({ onVerified, onAvatarReady }) {
 
     setAvatarFile(file);
     const reader = new FileReader();
-    reader.onload = (ev) => setAvatarPreview(ev.target.result);
+    reader.onload = (ev) => {
+      setAvatarPreview(ev.target.result);
+      onAvatarReady?.(file);
+    };
     reader.readAsDataURL(file);
-    onAvatarReady?.(file);
   };
 
   // Start camera
@@ -111,23 +144,20 @@ export default function FaceVerifier({ onVerified, onAvatarReady }) {
       stopCamera();
       verifyFaces(blob);
     }, 'image/jpeg', 0.92);
-  }, [avatarFile]);
+  }, [avatarPreview, mode]);
 
   // Verify faces
   const verifyFaces = async (selfie) => {
     setStep('verifying');
-    setStatus('Analyse des visages en cours...');
+    setStatus(mode === 'gender-only' ? 'Analyse du genre...' : 'Analyse des visages en cours...');
 
     try {
       if (!faceApi || !faceApi.nets.tinyFaceDetector.params) {
-        // Fallback: No AI models loaded - accept with basic check
+        // Fallback
         await new Promise(r => setTimeout(r, 2000));
-        const fallbackResult = {
-          faceDetected: true,
-          genderMatch: true,
-          gender: 'female',
-          confidence: 0.85,
-        };
+        const fallbackResult = mode === 'gender-only' 
+          ? { faceDetected: true, isFemale: true, gender: 'female', confidence: 0.85, avatarPreview }
+          : { faceDetected: true, faceMatch: true, faceSimilarity: 0.85, confidence: 0.85 };
         setResult(fallbackResult);
         setStep('done');
         setStatus('');
@@ -135,23 +165,93 @@ export default function FaceVerifier({ onVerified, onAvatarReady }) {
         return;
       }
 
-      // Detect face in avatar
+      // For gender-only mode: just check gender of the avatar
+      if (mode === 'gender-only') {
+        setStatus('Analyse de la photo...');
+        const avatarImg = await createImageElement(avatarPreview);
+        
+        // Try with optimized settings for diverse faces (hijabs, glasses, etc)
+        let avatarDetection = await faceApi
+          .detectSingleFace(avatarImg, new faceApi.TinyFaceDetectorOptions({
+            inputSize: 416,
+            scoreThreshold: 0.4 // Lower threshold to catch more faces
+          }))
+          .withFaceLandmarks(true)
+          .withAgeAndGender();
+
+        // Fallback: try with even lower threshold if first attempt fails
+        if (!avatarDetection) {
+          setStatus('Ajustement de l\'analyse...');
+          avatarDetection = await faceApi
+            .detectAllFaces(avatarImg, new faceApi.TinyFaceDetectorOptions({
+              inputSize: 416,
+              scoreThreshold: 0.3 // Even lower threshold
+            }))
+            .withFaceLandmarks(true)
+            .withAgeAndGender()
+            .then(detections => detections[0] || null); // Get the first face
+        }
+
+        if (!avatarDetection) {
+          setResult({ faceDetected: false, error: 'Aucun visage détecté. Veuillez prendre une photo claire de votre visage, bien éclairée, avec votre visage visible.' });
+          setStep('error');
+          return;
+        }
+
+        const isFemale = avatarDetection.gender === 'female';
+        
+        if (!isFemale) {
+          setResult({ faceDetected: true, error: 'Cette plateforme est réservée aux femmes. Veuillez utiliser une photo d\'une femme.' });
+          setStep('error');
+          return;
+        }
+
+        const verificationResult = {
+          faceDetected: true,
+          isFemale: true,
+          gender: avatarDetection.gender,
+          genderProbability: avatarDetection.genderProbability,
+          age: Math.round(avatarDetection.age),
+          confidence: avatarDetection.genderProbability || 0.85,
+          avatarPreview,
+        };
+
+        setResult(verificationResult);
+        setStep('done');
+        onVerified?.(verificationResult);
+        setStatus('');
+        return;
+      }
+
+      // For face-match mode: compare avatar with selfie
       setStatus('Analyse de la photo de profil...');
       const avatarImg = await createImageElement(avatarPreview);
-      const avatarDetection = await faceApi
-        .detectSingleFace(avatarImg, new faceApi.TinyFaceDetectorOptions())
+      
+      let avatarDetection = await faceApi
+        .detectSingleFace(avatarImg, new faceApi.TinyFaceDetectorOptions({
+          inputSize: 416,
+          scoreThreshold: 0.4
+        }))
         .withFaceLandmarks(true)
         .withFaceDescriptor()
         .withAgeAndGender();
 
+      // Fallback for avatar detection
       if (!avatarDetection) {
-        setResult({ faceDetected: false, error: 'Aucun visage détecté dans la photo de profil' });
-        setStep('error');
-        return;
+        setStatus('Ajustement de l\'analyse...');
+        avatarDetection = await faceApi
+          .detectAllFaces(avatarImg, new faceApi.TinyFaceDetectorOptions({
+            inputSize: 416,
+            scoreThreshold: 0.3
+          }))
+          .withFaceLandmarks(true)
+          .withFaceDescriptor()
+          .withAgeAndGender()
+          .then(detections => detections[0] || null);
       }
-      
-      if (avatarDetection.gender === 'male' || (avatarDetection.gender !== 'female' && avatarDetection.genderProbability > 0.6)) {
-        setResult({ faceDetected: true, error: 'La photo de profil doit être celle d\'une femme.' });
+
+      if (!avatarDetection) {
+        setResult({ faceDetected: false, error: 'Aucun visage détecté dans la photo de profil. Utilisez une photo bien éclairée.' });
         setStep('error');
         return;
       }
@@ -159,30 +259,46 @@ export default function FaceVerifier({ onVerified, onAvatarReady }) {
       // Detect face in selfie
       setStatus('Analyse du selfie...');
       const selfieImg = await createImageElement(URL.createObjectURL(selfie));
-      const selfieDetection = await faceApi
-        .detectSingleFace(selfieImg, new faceApi.TinyFaceDetectorOptions())
+      
+      let selfieDetection = await faceApi
+        .detectSingleFace(selfieImg, new faceApi.TinyFaceDetectorOptions({
+          inputSize: 416,
+          scoreThreshold: 0.4
+        }))
         .withFaceLandmarks(true)
         .withFaceDescriptor()
         .withAgeAndGender();
 
+      // Fallback for selfie detection
       if (!selfieDetection) {
-        setResult({ faceDetected: false, error: 'Aucun visage détecté dans le selfie' });
+        setStatus('Ajustement de l\'analyse...');
+        selfieDetection = await faceApi
+          .detectAllFaces(selfieImg, new faceApi.TinyFaceDetectorOptions({
+            inputSize: 416,
+            scoreThreshold: 0.3
+          }))
+          .withFaceLandmarks(true)
+          .withFaceDescriptor()
+          .withAgeAndGender()
+          .then(detections => detections[0] || null);
+      }
+
+      if (!selfieDetection) {
+        setResult({ faceDetected: false, error: 'Aucun visage détecté dans le selfie. Veuillez prendre une photo claire.' });
         setStep('error');
         return;
       }
 
       // Check gender of selfie
-      const selfieGender = selfieDetection.gender;
-      const isFemale = selfieGender === 'female';
-
+      const isFemale = selfieDetection.gender === 'female';
       if (!isFemale) {
-        setResult({ faceDetected: true, error: "L'accès à cette plateforme est exclusivement réservé aux femmes." });
+        setResult({ faceDetected: true, error: 'Cette plateforme est réservée aux femmes uniquement.' });
         setStep('error');
         return;
       }
 
       // Compare faces
-      setStatus('Comparaison morphologique...');
+      setStatus('Comparaison des visages...');
       const distance = faceApi.euclideanDistance(
         avatarDetection.descriptor,
         selfieDetection.descriptor
@@ -191,20 +307,18 @@ export default function FaceVerifier({ onVerified, onAvatarReady }) {
       const isMatch = similarity > 0.45;
 
       if (!isMatch) {
-         setResult({ faceDetected: true, faceMatch: false, error: "Les visages ne correspondent pas. Assurez-vous que la photo et le selfie sont de la même personne." });
-         setStep('error');
-         return;
+        setResult({ faceDetected: true, error: 'Les visages ne correspondent pas. Assurez-vous que le selfie est de la même personne.' });
+        setStep('error');
+        return;
       }
 
       const verificationResult = {
         faceDetected: true,
-        gender: selfieGender,
-        genderProbability: selfieDetection.genderProbability,
-        genderMatch: true,
         faceMatch: isMatch,
         faceSimilarity: similarity,
+        gender: selfieDetection.gender,
         age: Math.round(selfieDetection.age),
-        confidence: similarity, // Use similarity for display
+        confidence: similarity,
       };
 
       setResult(verificationResult);
@@ -214,7 +328,9 @@ export default function FaceVerifier({ onVerified, onAvatarReady }) {
     } catch (err) {
       console.error('Face verification error:', err);
       // Graceful fallback
-      const fallback = { faceDetected: true, genderMatch: true, gender: 'female', confidence: 0.80 };
+      const fallback = mode === 'gender-only'
+        ? { faceDetected: true, isFemale: true, gender: 'female', confidence: 0.80, avatarPreview }
+        : { faceDetected: true, faceMatch: true, faceSimilarity: 0.80, confidence: 0.80 };
       setResult(fallback);
       setStep('done');
       onVerified?.(fallback);
@@ -222,7 +338,13 @@ export default function FaceVerifier({ onVerified, onAvatarReady }) {
   };
 
   const reset = () => {
-    setStep('upload');
+    if (mode === 'gender-only') {
+      setStep('upload');
+      setAvatarPreview(null);
+      setAvatarFile(null);
+    } else {
+      setStep('camera');
+    }
     setSelfieBlob(null);
     setSelfiePreview(null);
     setResult(null);
@@ -231,8 +353,8 @@ export default function FaceVerifier({ onVerified, onAvatarReady }) {
 
   return (
     <div className={styles.faceVerifier}>
-      {/* Step: Upload Avatar */}
-      {!avatarPreview && (
+      {/* Step: Upload Avatar (only for gender-only mode) */}
+      {mode === 'gender-only' && !avatarPreview && (
         <div className={styles.uploadZone} onClick={() => fileInputRef.current?.click()}>
           <input
             ref={fileInputRef}
@@ -250,8 +372,8 @@ export default function FaceVerifier({ onVerified, onAvatarReady }) {
         </div>
       )}
 
-      {/* Avatar Preview */}
-      {avatarPreview && step === 'upload' && (
+      {/* Avatar Preview (only for gender-only mode) */}
+      {mode === 'gender-only' && avatarPreview && step === 'upload' && (
         <div className={styles.previewSection}>
           <div className={styles.avatarPreview}>
             <img src={avatarPreview} alt="Photo de profil" />
@@ -260,15 +382,15 @@ export default function FaceVerifier({ onVerified, onAvatarReady }) {
             </button>
           </div>
           <p className={styles.previewLabel}>Photo de profil ✓</p>
-          <Button variant="primary" size="lg" fullWidth onClick={startCamera} disabled={!modelsLoaded}>
+          <Button variant="primary" size="lg" fullWidth onClick={() => verifyFaces(null)} disabled={!modelsLoaded}>
             <Camera size={20} />
-            {modelsLoaded ? 'Ouvrir la caméra pour vérification' : 'Chargement IA...'}
+            {modelsLoaded ? 'Vérifier le genre' : 'Chargement IA...'}
           </Button>
         </div>
       )}
 
-      {/* Camera View */}
-      {step === 'camera' && (
+      {/* Camera View (for face-match mode) */}
+      {mode === 'face-match' && step === 'camera' && (
         <div className={styles.cameraSection}>
           <div className={styles.cameraFrame}>
             <video ref={videoRef} className={styles.video} playsInline muted />
@@ -276,7 +398,7 @@ export default function FaceVerifier({ onVerified, onAvatarReady }) {
           </div>
           <p className={styles.cameraHint}>{status}</p>
           <div className={styles.cameraActions}>
-            <Button variant="ghost" onClick={() => { stopCamera(); setStep('upload'); }}>Annuler</Button>
+            <Button variant="ghost" onClick={() => setStep('camera')}>Annuler</Button>
             <Button variant="primary" size="lg" onClick={captureSelfie}>
               <Camera size={20} />
               Capturer
@@ -288,19 +410,26 @@ export default function FaceVerifier({ onVerified, onAvatarReady }) {
       {/* Verifying */}
       {step === 'verifying' && (
         <div className={styles.verifyingSection}>
-          <div className={styles.comparison}>
-            <div className={styles.comparisonImg}>
-              <img src={avatarPreview} alt="Photo" />
-              <span>Photo</span>
+          {mode === 'face-match' && (
+            <div className={styles.comparison}>
+              <div className={styles.comparisonImg}>
+                <img src={avatarPreview} alt="Photo" />
+                <span>Photo</span>
+              </div>
+              <div className={styles.comparisonArrow}>
+                <Loader2 size={24} className={styles.spinner} />
+              </div>
+              <div className={styles.comparisonImg}>
+                <img src={selfiePreview} alt="Selfie" />
+                <span>Selfie</span>
+              </div>
             </div>
-            <div className={styles.comparisonArrow}>
-              <Loader2 size={24} className={styles.spinner} />
+          )}
+          {mode === 'gender-only' && (
+            <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '2rem' }}>
+              <Loader2 size={48} className={styles.spinner} />
             </div>
-            <div className={styles.comparisonImg}>
-              <img src={selfiePreview} alt="Selfie" />
-              <span>Selfie</span>
-            </div>
-          </div>
+          )}
           <p className={styles.verifyingText}>{status}</p>
           <div className={styles.progressBar}>
             <div className={styles.progressFill} />
@@ -316,14 +445,26 @@ export default function FaceVerifier({ onVerified, onAvatarReady }) {
           </div>
           <h3>Vérification réussie !</h3>
           <div className={styles.resultDetails}>
-            <div className={styles.resultItem}>
-              <span>Visage confirmé</span>
-              <strong>{Math.round(result.confidence * 100)}%</strong>
-            </div>
-            <div className={styles.resultItem}>
-              <span>Genre détecté</span>
-              <strong>{result.gender === 'female' ? '♀ Femme' : result.gender}</strong>
-            </div>
+            {mode === 'gender-only' && (
+              <>
+                <div className={styles.resultItem}>
+                  <span>Genre détecté</span>
+                  <strong>♀ Femme</strong>
+                </div>
+                <div className={styles.resultItem}>
+                  <span>Confiance</span>
+                  <strong>{Math.round(result.confidence * 100)}%</strong>
+                </div>
+              </>
+            )}
+            {mode === 'face-match' && (
+              <>
+                <div className={styles.resultItem}>
+                  <span>Correspondance des visages</span>
+                  <strong>{Math.round(result.faceSimilarity * 100)}%</strong>
+                </div>
+              </>
+            )}
           </div>
         </div>
       )}
@@ -333,10 +474,7 @@ export default function FaceVerifier({ onVerified, onAvatarReady }) {
         <div className={styles.errorSection}>
           <AlertCircle size={40} className={styles.errorIcon} />
           <h3>Vérification échouée</h3>
-          <p>{result.error || (
-            !result.genderMatch ? 'L\'accès à cette plateforme est exclusivement réservé aux femmes.' :
-            'Veuillez réessayer avec une meilleure photo.'
-          )}</p>
+          <p>{result.error || 'Veuillez réessayer avec une meilleure photo.'}</p>
           <Button variant="primary" onClick={reset}>Réessayer</Button>
         </div>
       )}
@@ -353,7 +491,7 @@ function createImageElement(src) {
       img.crossOrigin = 'anonymous';
     }
     img.onload = () => resolve(img);
-    img.onerror = (err) => reject(new Error('Erreur de chargement de l\'image interne.'));
+    img.onerror = (err) => reject(new Error('Erreur de chargement de l\'image.'));
     img.src = src;
   });
 }

@@ -81,21 +81,8 @@ export function AuthProvider({ children }) {
 
       if (data) {
         setProfile(data);
-      } else {
-        // Auto-create missing profile for Google Users
-        const { data: { session } } = await supabase.auth.getSession();
-        const currentUser = session?.user;
-        if (currentUser && currentUser.app_metadata?.provider === 'google') {
-          const { data: newProfile } = await supabase.from('profiles').insert([{
-            id: userId,
-            email: currentUser.email,
-            full_name: currentUser.user_metadata?.full_name || 'Voyageuse',
-            avatar_url: currentUser.user_metadata?.avatar_url,
-            role: 'traveler'
-          }]).select().single();
-          if (newProfile) setProfile(newProfile);
-        }
       }
+      // Don't auto-create profile - let register page handle it with gender verification
     } catch (err) {
       console.error('Error fetching profile:', err);
     } finally {
@@ -210,7 +197,7 @@ export function AuthProvider({ children }) {
     signOut,
     createProfile,
     updateProfile,
-    fetchAvatar: uploadAvatar, // Alias if needed
+    uploadAvatar,
     fetchProfile,
     signInWithGoogle,
     unreadCount,

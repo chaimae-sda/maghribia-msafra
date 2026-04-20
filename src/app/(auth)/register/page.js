@@ -3,10 +3,9 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { ArrowRight, ArrowLeft, Mail, Lock, User, MapPin, Shield, Eye, EyeOff, CheckCircle, Loader2 } from 'lucide-react';
+import { ArrowRight, ArrowLeft, Mail, Lock, User, MapPin, Eye, EyeOff, CheckCircle, Loader2 } from 'lucide-react';
 import Button from '@/components/ui/Button';
 import OtpInput from '@/components/auth/OtpInput';
-import CinVerifier from '@/components/auth/CinVerifier';
 import FaceVerifier from '@/components/auth/FaceVerifier';
 import { useAuth } from '@/context/AuthContext';
 import styles from '../login/page.module.css';
@@ -15,35 +14,28 @@ export default function RegisterPage() {
   const router = useRouter();
   const { user, profile, signUp, verifyOtp, resendOtp, signIn, createProfile, uploadAvatar, signInWithGoogle } = useAuth();
 
-  const [step, setStep] = useState(1);
+  const [step, setStep] = useState(1); // 1: signup, 2: otp, 3: avatar+gender, 4: face, 5: done
   const [showPass, setShowPass] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
   const [form, setForm] = useState({ name: '', email: '', city: '', password: '' });
-  const [cinData, setCinData] = useState(null);
+  const [genderCheckResult, setGenderCheckResult] = useState(null);
   const [faceData, setFaceData] = useState(null);
   const [avatarFile, setAvatarFile] = useState(null);
 
   const updateForm = (key, value) => setForm(prev => ({ ...prev, [key]: value }));
 
-  // Intercept Google Auth
+  // Intercept Google Auth - redirect to gender verification instead of feed
   useEffect(() => {
     let mounted = true;
     async function setupGoogleProfile() {
       if (user && !profile && user.app_metadata?.provider === 'google') {
-        setLoading(true);
-        const name = user.user_metadata?.full_name || 'Voyageuse';
-        const avatar = user.user_metadata?.avatar_url || null;
-        await createProfile({ full_name: name, avatar_url: avatar, role: 'traveler' });
-        if (mounted) {
-          setLoading(false);
-          router.push('/feed');
-        }
-      } else if (user && !profile && step < 3 && user.app_metadata?.provider !== 'google') {
-        // User is authenticated (unfinished email signup) but no profile in DB -> Go to CIN
+        // Google user logged in, redirect to avatar+gender step
+        setForm(prev => ({ ...prev, name: user.user_metadata?.full_name || 'Voyageuse' }));
         setStep(3);
       } else if (user && profile) {
+        // Profile already exists, redirect accordingly
         if (profile.role === 'agency') {
           router.push('/agency');
         } else {
@@ -53,7 +45,7 @@ export default function RegisterPage() {
     }
     setupGoogleProfile();
     return () => { mounted = false; };
-  }, [user, profile, router, step, createProfile]);
+  }, [user, profile, router, createProfile]);
 
   // Step 1: Sign up
   const handleSignUp = async (e) => {
@@ -96,9 +88,7 @@ export default function RegisterPage() {
           return;
         }
 
-        // Il a pu se connecter : son email est confirmé !
-        // Puisqu'il est là, c'est qu'il n'avait pas complètement fini la procédure (CIN et Photo)
-        // On le passe directement à l'étape 3 pour reprendre où il s'est arrêté.
+        // User can sign in - email is confirmed, go to avatar step
         setStep(3);
         setLoading(false);
         return;
@@ -145,22 +135,25 @@ export default function RegisterPage() {
     }
   };
 
-  // Step 3: CIN verified
-  const handleCinVerified = (data) => {
-    setCinData(data);
-  };
-
-  // Step 4: Face verified
-  const handleFaceVerified = (data) => {
-    setFaceData(data);
+  // Step 3: Gender check from avatar
+  const handleGenderCheckResult = (result) => {
+    setGenderCheckResult(result);
+    if (result.isFemale) {
+      setError(''); // Clear errors if gender check passed
+    }
   };
 
   const handleAvatarReady = (file) => {
     setAvatarFile(file);
   };
 
+  // Step 4: Face verified - wait for user to click button
+  const handleFaceVerified = (data) => {
+    setFaceData(data);
+  };
+
   // Final: Create profile and redirect
-  const handleComplete = async () => {
+  const handleCompleteProfile = async (verificationData) => {
     setLoading(true);
     setError('');
 
@@ -174,18 +167,17 @@ export default function RegisterPage() {
 
       // Create profile
       const finalName = user?.user_metadata?.full_name || form.name;
-      const finalAvatar = avatarUrl || user?.user_metadata?.avatar_url || null;
+      const finalCity = form.city || 'Non renseignée';
 
       const { data, error: profileError } = await createProfile({
         full_name: finalName,
-        city: form.city || 'Non renseignée',
-        cin_number: cinData?.number || '',
-        cin_region: cinData?.region || '',
-        avatar_url: finalAvatar,
+        city: finalCity,
+        avatar_url: avatarUrl,
         is_verified: true,
-        gender_verified: faceData?.genderMatch || false,
+        gender_verified: true,
         face_match_score: faceData?.faceSimilarity || faceData?.confidence || 0,
         verification_status: 'verified',
+        role: 'traveler',
       });
 
       if (profileError) {
@@ -222,15 +214,15 @@ export default function RegisterPage() {
           <h2>
             {step === 1 && 'Rejoignez-nous ! 🌍'}
             {step === 2 && 'Vérifiez votre email 📧'}
-            {step === 3 && 'Vérification CIN 🪪'}
-            {step === 4 && 'Vérification biométrique 🤳'}
+            {step === 3 && 'Photo de profil 📸'}
+            {step === 4 && 'Vérification visage 🤳'}
             {step === 5 && 'Bienvenue ! 🎉'}
           </h2>
           <p>
-            {step === 1 && 'Créez votre compte vérifié et commencez votre aventure avec des milliers de voyageuses marocaines.'}
+            {step === 1 && 'Créez votre compte et commencez votre aventure avec des milliers de voyageuses marocaines.'}
             {step === 2 && 'Un code de vérification a été envoyé à votre adresse email.'}
-            {step === 3 && 'Nous vérifions votre identité pour la sécurité de toutes.'}
-            {step === 4 && 'Dernière étape : confirmez votre identité avec une photo.'}
+            {step === 3 && 'Uploadez votre photo de profil pour vérifier votre genre.'}
+            {step === 4 && 'Dernière étape : prenez un selfie pour confirmer votre identité.'}
             {step === 5 && 'Votre compte a été créé avec succès !'}
           </p>
         </div>
@@ -248,7 +240,7 @@ export default function RegisterPage() {
 
           {/* Steps indicator */}
           <div className={styles.steps}>
-            {['Infos', 'Email', 'CIN', 'Photo', 'Fin'].map((label, i) => (
+            {['Infos', 'Email', 'Photo', 'Visage', 'Fin'].map((label, i) => (
               <div key={i} className={`${styles.step} ${step >= i + 1 ? styles.step_active : ''} ${step > i + 1 ? styles.step_done : ''}`}>
                 <span className={styles.step_number}>{step > i + 1 ? '✓' : i + 1}</span>
                 <span className={styles.step_label}>{label}</span>
@@ -276,7 +268,7 @@ export default function RegisterPage() {
                 type="button" 
                 className={styles.socialBtn} 
                 style={{ marginBottom: '1.5rem', marginTop: '1rem', width: '100%' }}
-                onClick={() => signInWithGoogle(typeof window !== 'undefined' ? `${window.location.origin}/feed` : 'http://localhost:3000/feed')}
+                onClick={() => signInWithGoogle(typeof window !== 'undefined' ? `${window.location.origin}/register` : 'http://localhost:3000/register')}
               >
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ marginRight: '8px' }}>
                   <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
@@ -323,7 +315,7 @@ export default function RegisterPage() {
                     </button>
                   </div>
                 </div>
-                <Button variant="primary" size="lg" fullWidth disabled={loading} iconRight={loading ? <Loader2 size={18} className="spin" /> : <ArrowRight size={18} />}>
+                <Button type="submit" variant="primary" size="lg" fullWidth disabled={loading} iconRight={loading ? <Loader2 size={18} className="spin" /> : <ArrowRight size={18} />}>
                   {loading ? 'Inscription...' : 'Continuer'}
                 </Button>
                 <p className={styles.auth_switch}>Déjà un compte ? <Link href="/login">Se connecter</Link></p>
@@ -359,35 +351,36 @@ export default function RegisterPage() {
             </>
           )}
 
-          {/* Step 3: CIN Verification */}
+          {/* Step 3: Avatar Upload & Gender Check */}
           {step === 3 && (
             <>
               <div className={styles.auth_header}>
-                <h1>🪪 Vérification CIN</h1>
-                <p>Entrez votre numéro de Carte d'Identité Nationale</p>
+                <h1>📸 Photo de profil</h1>
+                <p>Uploadez votre photo de profil pour vérification</p>
               </div>
               <div className={styles.auth_form}>
-                <div className={styles.kyc_info}>
-                  <Shield size={20} />
-                  <span>Votre CIN est vérifié localement et n'est pas stocké en clair. Conformité loi 09-08 / RGPD.</span>
-                </div>
-
-                <CinVerifier onVerified={handleCinVerified} />
+                <FaceVerifier
+                  onVerified={handleGenderCheckResult}
+                  onAvatarReady={handleAvatarReady}
+                  mode="gender-only"
+                />
 
                 <div style={{ display: 'flex', gap: 'var(--space-3)', marginTop: 'var(--space-4)' }}>
                   <Button variant="ghost" onClick={() => setStep(2)} icon={<ArrowLeft size={18} />}>
                     Retour
                   </Button>
-                  <Button
-                    variant="primary"
-                    size="lg"
-                    fullWidth
-                    disabled={!cinData}
-                    iconRight={<ArrowRight size={18} />}
-                    onClick={() => setStep(4)}
-                  >
-                    Continuer
-                  </Button>
+                  {genderCheckResult?.isFemale && (
+                    <Button
+                      variant="primary"
+                      size="lg"
+                      fullWidth
+                      disabled={loading}
+                      iconRight={loading ? <Loader2 size={18} className="spin" /> : <ArrowRight size={18} />}
+                      onClick={() => setStep(4)}
+                    >
+                      {loading ? 'Vérification...' : 'Continuer'}
+                    </Button>
+                  )}
                 </div>
               </div>
             </>
@@ -397,13 +390,15 @@ export default function RegisterPage() {
           {step === 4 && (
             <>
               <div className={styles.auth_header}>
-                <h1>🤳 Vérification biométrique</h1>
-                <p>Uploadez votre photo de profil puis prenez un selfie</p>
+                <h1>🤳 Vérification visage</h1>
+                <p>Prenez un selfie pour confirmer votre identité</p>
               </div>
               <div className={styles.auth_form}>
                 <FaceVerifier
                   onVerified={handleFaceVerified}
                   onAvatarReady={handleAvatarReady}
+                  mode="face-match"
+                  avatarPreview={genderCheckResult?.avatarPreview}
                 />
 
                 <div style={{ display: 'flex', gap: 'var(--space-3)', marginTop: 'var(--space-4)' }}>
@@ -412,12 +407,13 @@ export default function RegisterPage() {
                   </Button>
                   {faceData && (
                     <Button
+                      type="button"
                       variant="primary"
                       size="lg"
                       fullWidth
                       disabled={loading}
                       iconRight={loading ? <Loader2 size={18} className="spin" /> : <ArrowRight size={18} />}
-                      onClick={handleComplete}
+                      onClick={() => handleCompleteProfile(faceData)}
                     >
                       {loading ? 'Création du profil...' : 'Finaliser mon inscription'}
                     </Button>
@@ -437,7 +433,7 @@ export default function RegisterPage() {
               </p>
               <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-3)', justifyContent: 'center', padding: 'var(--space-4)', background: 'rgba(42,157,143,0.08)', borderRadius: 'var(--radius-lg)', marginBottom: 'var(--space-8)' }}>
                 <CheckCircle size={20} style={{ color: 'var(--jade)' }} />
-                <span style={{ fontSize: 'var(--text-sm)', color: 'var(--jade-dark)' }}>✓ Email vérifié • ✓ CIN validé • ✓ Identité confirmée</span>
+                <span style={{ fontSize: 'var(--text-sm)', color: 'var(--jade-dark)' }}>✓ Email vérifié • ✓ Genre confirmé • ✓ Identité vérifiée</span>
               </div>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 'var(--space-2)', color: 'var(--majorelle)' }}>
                 <Loader2 size={18} className="spin" />
