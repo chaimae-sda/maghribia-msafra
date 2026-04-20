@@ -8,7 +8,7 @@ import { supabase } from '@/lib/supabase';
 import Button from '@/components/ui/Button';
 import Badge from '@/components/ui/Badge';
 
-const ADMIN_EMAIL = 'chaimae.sadaoui@gmail.com'; 
+const ADMIN_EMAIL = 'saadichaimae12@gmail.com'; 
 const SECRET_PASSCODE = 'Maghribia2026!';
 
 export default function AdminPage() {

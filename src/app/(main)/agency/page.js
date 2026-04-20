@@ -451,24 +451,24 @@ export default function AgencyDashboard() {
 
     return (
       <div className="tab-content fade-in">
-        {/* LA CORRECTION EST ICI : 1fr pousse les tableaux au max, 420px fixe la taille de la carte à droite */}
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 420px', gap: '4rem', alignItems: 'start' }}>
+        {/* Centered grid layout with balanced columns */}
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 380px', gap: '2rem', alignItems: 'start', width: '100%' }}>
 
           <div style={{ width: '100%' }}>
             {/* SECTION 1: FACTURES À RÉGLER */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1.5rem' }}>
-              <div style={{ fontSize: '1.5rem' }}>📑</div>
-              <h2 style={{ margin: 0 }}>Factures à régler</h2>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '2rem' }}>
+              <div style={{ fontSize: '1.6rem' }}>📑</div>
+              <h2 style={{ margin: 0, fontSize: '1.3rem', fontWeight: 700, color: 'var(--text-primary)' }}>Factures à régler</h2>
             </div>
 
-            <div style={{ background: 'var(--bg-card)', borderRadius: '20px', border: '1px solid var(--border-light)', overflow: 'hidden', marginBottom: '3rem' }}>
+            <div style={{ background: 'var(--bg-card)', borderRadius: '16px', border: '1px solid var(--border-light)', overflow: 'hidden', marginBottom: '2.5rem', boxShadow: '0 2px 8px rgba(0,0,0,0.04)' }}>
               <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
-                <thead style={{ background: 'var(--bg-secondary)', color: 'var(--text-muted)', fontSize: '0.85rem' }}>
+                <thead style={{ background: 'var(--bg-secondary)', color: 'var(--text-muted)', fontSize: '0.8rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px' }}>
                   <tr>
-                    <th style={{ padding: '1.25rem', whiteSpace: 'nowrap' }}>Mois</th>
-                    <th style={{ padding: '1.25rem', whiteSpace: 'nowrap' }}>Montant</th>
-                    <th style={{ padding: '1.25rem', whiteSpace: 'nowrap' }}>Statut</th>
-                    <th style={{ padding: '1.25rem', textAlign: 'right', whiteSpace: 'nowrap' }}>Action</th>
+                    <th style={{ padding: '1rem 1.25rem', whiteSpace: 'nowrap' }}>Mois</th>
+                    <th style={{ padding: '1rem 1.25rem', whiteSpace: 'nowrap' }}>Montant</th>
+                    <th style={{ padding: '1rem 1.25rem', whiteSpace: 'nowrap' }}>Statut</th>
+                    <th style={{ padding: '1rem 1.25rem', textAlign: 'right', whiteSpace: 'nowrap' }}>Action</th>
                   </tr>
                 </thead>
                 <tbody style={{ color: 'var(--text-primary)' }}>
@@ -477,22 +477,26 @@ export default function AgencyDashboard() {
                     const status = payment?.status || 'unpaid';
 
                     return (
-                      <tr key={m} style={{ borderBottom: '1px solid var(--border-light)' }}>
-                        <td style={{ padding: '1.25rem', fontWeight: 600 }}>{m}</td>
-                        <td style={{ padding: '1.25rem' }}>450 MAD</td>
-                        <td style={{ padding: '1.25rem' }}>
+                      <tr key={m} style={{ borderBottom: '1px solid var(--border-light)', transition: 'background-color 0.2s', cursor: 'pointer' }}
+                        onMouseEnter={e => e.currentTarget.style.backgroundColor = 'var(--bg-secondary)'}
+                        onMouseLeave={e => e.currentTarget.style.backgroundColor = 'transparent'}>
+                        <td style={{ padding: '1rem 1.25rem', fontWeight: 600, color: 'var(--text-primary)' }}>{m}</td>
+                        <td style={{ padding: '1rem 1.25rem', fontWeight: 600, color: 'var(--text-primary)' }}>450 MAD</td>
+                        <td style={{ padding: '1rem 1.25rem' }}>
                           {status === 'pending' ? (
                             <Badge variant="warning">En cours</Badge>
                           ) : (
-                            <Badge variant="rose">Unpaid</Badge>
+                            <Badge variant="rose">Non payé</Badge>
                           )}
                         </td>
-                        <td style={{ padding: '1.25rem', textAlign: 'right' }}>
+                        <td style={{ padding: '1rem 1.25rem', textAlign: 'right' }}>
                           <button
                             onClick={() => generateInvoicePDF(m, 450, status)}
-                            style={{ background: 'none', border: 'none', color: '#007bff', cursor: 'pointer', fontWeight: 600, fontSize: '0.9rem', width: '100%', textAlign: 'right', textDecoration: 'underline' }}
+                            style={{ background: 'none', border: 'none', color: 'var(--majorelle)', cursor: 'pointer', fontWeight: 600, fontSize: '0.85rem', textDecoration: 'none', transition: 'opacity 0.2s', padding: '0.4rem 0.8rem' }}
+                            onMouseEnter={e => e.currentTarget.style.opacity = '0.7'}
+                            onMouseLeave={e => e.currentTarget.style.opacity = '1'}
                           >
-                            Facture
+                            Télécharger
                           </button>
                         </td>
                       </tr>
@@ -505,34 +509,38 @@ export default function AgencyDashboard() {
             {/* SECTION 2: HISTORIQUE DES PAIEMENTS */}
             {paidPayments.length > 0 && (
               <>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1.5rem' }}>
-                  <div style={{ fontSize: '1.5rem' }}>✅</div>
-                  <h2 style={{ margin: 0 }}>Historique des paiements</h2>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '2rem' }}>
+                  <div style={{ fontSize: '1.6rem' }}>✅</div>
+                  <h2 style={{ margin: 0, fontSize: '1.3rem', fontWeight: 700, color: 'var(--text-primary)' }}>Historique des paiements</h2>
                 </div>
-                <div style={{ background: 'rgba(42,157,143,0.05)', borderRadius: '20px', border: '1px solid var(--jade)', overflow: 'hidden' }}>
+                <div style={{ background: 'rgba(42,157,143,0.02)', borderRadius: '16px', border: '1px solid rgba(42,157,143,0.15)', overflow: 'hidden', boxShadow: '0 2px 8px rgba(0,0,0,0.04)' }}>
                   <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
-                    <thead style={{ background: 'rgba(42,157,143,0.1)', color: 'var(--jade)', fontSize: '0.85rem' }}>
+                    <thead style={{ background: 'rgba(42,157,143,0.08)', color: 'var(--jade)', fontSize: '0.8rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px' }}>
                       <tr>
-                        <th style={{ padding: '1.25rem', whiteSpace: 'nowrap' }}>Mois</th>
-                        <th style={{ padding: '1.25rem', whiteSpace: 'nowrap' }}>Montant</th>
-                        <th style={{ padding: '1.25rem', whiteSpace: 'nowrap' }}>Statut</th>
-                        <th style={{ padding: '1.25rem', textAlign: 'right', whiteSpace: 'nowrap' }}>Action</th>
+                        <th style={{ padding: '1rem 1.25rem', whiteSpace: 'nowrap' }}>Mois</th>
+                        <th style={{ padding: '1rem 1.25rem', whiteSpace: 'nowrap' }}>Montant</th>
+                        <th style={{ padding: '1rem 1.25rem', whiteSpace: 'nowrap' }}>Statut</th>
+                        <th style={{ padding: '1rem 1.25rem', textAlign: 'right', whiteSpace: 'nowrap' }}>Action</th>
                       </tr>
                     </thead>
                     <tbody style={{ color: 'var(--text-primary)' }}>
                       {paidPayments.map(p => (
-                        <tr key={p.id} style={{ borderBottom: '1px solid rgba(42,157,143,0.1)' }}>
-                          <td style={{ padding: '1.25rem', fontWeight: 600 }}>{p.month}</td>
-                          <td style={{ padding: '1.25rem' }}>{p.amount} MAD</td>
-                          <td style={{ padding: '1.25rem' }}>
-                            <Badge variant="jade">Paid</Badge>
+                        <tr key={p.id} style={{ borderBottom: '1px solid rgba(42,157,143,0.1)', transition: 'background-color 0.2s', cursor: 'pointer' }}
+                          onMouseEnter={e => e.currentTarget.style.backgroundColor = 'rgba(42,157,143,0.05)'}
+                          onMouseLeave={e => e.currentTarget.style.backgroundColor = 'transparent'}>
+                          <td style={{ padding: '1rem 1.25rem', fontWeight: 600, color: 'var(--text-primary)' }}>{p.month}</td>
+                          <td style={{ padding: '1rem 1.25rem', fontWeight: 600, color: 'var(--text-primary)' }}>{p.amount} MAD</td>
+                          <td style={{ padding: '1rem 1.25rem' }}>
+                            <Badge variant="jade">Payé</Badge>
                           </td>
-                          <td style={{ padding: '1.25rem', textAlign: 'right' }}>
+                          <td style={{ padding: '1rem 1.25rem', textAlign: 'right' }}>
                             <button
                               onClick={() => generateInvoicePDF(p.month, p.amount, 'approved')}
-                              style={{ background: 'none', border: 'none', color: '#007bff', cursor: 'pointer', fontWeight: 600, fontSize: '0.9rem', width: '100%', textAlign: 'right', textDecoration: 'underline' }}
+                              style={{ background: 'none', border: 'none', color: 'var(--majorelle)', cursor: 'pointer', fontWeight: 600, fontSize: '0.85rem', textDecoration: 'none', transition: 'opacity 0.2s', padding: '0.4rem 0.8rem' }}
+                              onMouseEnter={e => e.currentTarget.style.opacity = '0.7'}
+                              onMouseLeave={e => e.currentTarget.style.opacity = '1'}
                             >
-                              Facture
+                              Télécharger
                             </button>
                           </td>
                         </tr>
@@ -544,30 +552,41 @@ export default function AgencyDashboard() {
             )}
           </div>
 
-          <div style={{ background: 'var(--bg-card)', borderRadius: '24px', padding: '2.5rem', border: '1px solid var(--border-light)', boxShadow: '0 10px 30px rgba(0,0,0,0.03)', position: 'sticky', top: '2rem' }}>
-            <h3 style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '1.5rem' }}>
-              <DollarSign size={20} color="var(--majorelle)" /> Régler mon abonnement
+          <div style={{ background: 'var(--bg-card)', borderRadius: '16px', padding: '2rem', border: '1px solid var(--border-light)', boxShadow: '0 4px 16px rgba(0,0,0,0.08)', position: 'sticky', top: '2rem', height: 'fit-content' }}>
+            <h3 style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '1.5rem', fontSize: '1.1rem', fontWeight: 700, color: 'var(--text-primary)' }}>
+              <DollarSign size={22} color="var(--majorelle)" /> Régler mon abonnement
             </h3>
-            <p style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', marginBottom: '1.5rem' }}>
-              Veuillez effectuer un virement de 450 MAD sur le RIB de la plateforme :
+            <p style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', marginBottom: '1.5rem', lineHeight: 1.6 }}>
+              Effectuez un virement de <span style={{ fontWeight: 600, color: 'var(--text-primary)' }}>450 MAD</span> vers le RIB de la plateforme.
             </p>
-            <div style={{ background: 'var(--bg-primary)', padding: '1rem', borderRadius: '12px', marginBottom: '2rem', border: '1px solid var(--border-light)' }}>
-              <div style={{ fontSize: '0.85rem', fontFamily: 'monospace', wordBreak: 'break-all', color: 'var(--text-primary)' }}>
-                007 123 4567890123 45 (Admin RIB)
+            <div style={{ background: 'var(--bg-primary)', padding: '1rem 1.25rem', borderRadius: '12px', marginBottom: '2rem', border: '1px solid var(--border-light)' }}>
+              <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.5rem', fontWeight: 500, textTransform: 'uppercase', letterSpacing: '0.5px' }}>RIB Plateforme</div>
+              <div style={{ fontSize: '0.95rem', fontFamily: 'monospace', wordBreak: 'break-all', color: 'var(--text-primary)', fontWeight: 600, letterSpacing: '1px' }}>
+                007 123 4567890123 45
               </div>
             </div>
 
-            <div style={{ border: '2px dashed var(--border-light)', borderRadius: '16px', padding: '1.5rem', textAlign: 'center', position: 'relative' }}>
-              <input type="file" onChange={e => setReceiptFile(e.target.files[0])} style={{ position: 'absolute', inset: 0, opacity: 0, cursor: 'pointer' }} />
-              <UploadCloud size={32} color="var(--text-muted)" style={{ marginBottom: '0.5rem' }} />
-              <div style={{ fontSize: '0.9rem', fontWeight: 600 }}>{receiptFile ? receiptFile.name : 'Déposer le reçu du virement'}</div>
-              <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '4px' }}>Images ou PDF recommandés</div>
+            <div style={{ border: '2px dashed var(--border-light)', borderRadius: '12px', padding: '1.5rem', textAlign: 'center', position: 'relative', background: 'var(--bg-primary)', cursor: 'pointer', transition: 'all 0.2s' }}
+              onMouseEnter={e => {
+                e.currentTarget.style.borderColor = 'var(--majorelle)';
+                e.currentTarget.style.background = 'rgba(102, 51, 153, 0.02)';
+              }}
+              onMouseLeave={e => {
+                e.currentTarget.style.borderColor = 'var(--border-light)';
+                e.currentTarget.style.background = 'var(--bg-primary)';
+              }}>
+              <input type="file" onChange={e => setReceiptFile(e.target.files[0])} style={{ position: 'absolute', inset: 0, opacity: 0, cursor: 'pointer', borderRadius: '12px' }} />
+              <UploadCloud size={32} color="var(--majorelle)" style={{ marginBottom: '0.5rem' }} />
+              <div style={{ fontSize: '0.9rem', fontWeight: 600, color: 'var(--text-primary)', marginBottom: '0.25rem' }}>
+                {receiptFile ? receiptFile.name : 'Télécharger le reçu'}
+              </div>
+              <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>PDF ou image recommandé</div>
             </div>
 
             <Button
               variant="primary"
               fullWidth
-              style={{ marginTop: '1.5rem' }}
+              style={{ marginTop: '1.5rem', height: '44px', fontSize: '0.95rem', fontWeight: 600 }}
               onClick={handleUploadReceipt}
               disabled={uploadingReceipt || !receiptFile}
             >
