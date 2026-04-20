@@ -80,8 +80,12 @@ function LoginContent() {
     setLoading(true);
     setError('');
     try {
-      // Redirect to register - if user exists, it will be handled there, if not they'll sign up
-      await signInWithGoogle(typeof window !== 'undefined' ? `${window.location.origin}/register` : 'http://localhost:3000/register');
+      // Get the correct redirect URL
+      const redirectUrl = typeof window !== 'undefined' 
+        ? `${window.location.origin}/register` 
+        : 'http://localhost:3000/register';
+      
+      await signInWithGoogle(redirectUrl);
     } catch (err) {
       setError('Erreur lors de la connexion avec Google');
       setLoading(false);

@@ -175,11 +175,20 @@ export function AuthProvider({ children }) {
     return { url: publicUrl, error: null };
   }
 
-  async function signInWithGoogle(redirectTo = typeof window !== 'undefined' ? `${window.location.origin}/feed` : 'http://localhost:3000/feed') {
+  async function signInWithGoogle(redirectTo) {
+    // Determine the correct redirect URL
+    let finalRedirectUrl = redirectTo;
+    
+    if (!finalRedirectUrl && typeof window !== 'undefined') {
+      finalRedirectUrl = `${window.location.origin}/feed`;
+    } else if (!finalRedirectUrl) {
+      finalRedirectUrl = 'http://localhost:3000/feed';
+    }
+    
     const { data, error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {
-        redirectTo: redirectTo
+        redirectTo: finalRedirectUrl
       }
     });
     if (error) throw error;
