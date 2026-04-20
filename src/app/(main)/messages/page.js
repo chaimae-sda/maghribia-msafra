@@ -70,51 +70,77 @@ function MessagesContent() {
   }
 
   async function fetchConversations() {
-    const { data: allMessages } = await supabase
-      .from('messages')
-      .select('sender_id, receiver_id, content, created_at, status')
-      .or(`sender_id.eq.${user.id},receiver_id.eq.${user.id}`)
-      .order('created_at', { ascending: false });
+    // Get the latest message from each conversation - OPTIMIZED approach
+    // Get all friendships first for this user
+    const { data: friendships } = await supabase
+      .from('friendships')
+      .select('id, user_id, friend_id, status')
+      .or(`user_id.eq.${user.id},friend_id.eq.${user.id}`);
 
-    if (!allMessages) {
+    if (!friendships || friendships.length === 0) {
+      setChats([]);
       setLoading(false);
       return;
     }
 
-    const interlocutorIds = [...new Set(allMessages.map(m =>
-      m.sender_id === user.id ? m.receiver_id : m.sender_id
-    ))];
+    // Get friend IDs
+    const friendIds = friendships.map(f => f.user_id === user.id ? f.friend_id : f.user_id);
 
+    // Get profiles for all friends - single query
     const { data: profiles } = await supabase
       .from('profiles')
       .select('id, full_name, avatar_url, city')
-      .in('id', interlocutorIds);
+      .in('id', friendIds);
 
-    const { data: friendships } = await supabase
-      .from('friendships')
-      .select('user_id, friend_id, status')
-      .or(`user_id.eq.${user.id},friend_id.eq.${user.id}`);
+    if (!profiles || profiles.length === 0) {
+      setChats([]);
+      setLoading(false);
+      return;
+    }
 
-    const conversationList = (profiles || []).map(p => {
-      const userMessages = allMessages.filter(m => m.sender_id === p.id || m.receiver_id === p.id);
-      const lastMsg = userMessages[0];
-      const unreadCount = userMessages.filter(m => m.receiver_id === user.id && m.status !== 'read').length;
+    // Get latest message and unread count for each conversation - optimized with limit
+    const conversationList = await Promise.all(
+      profiles.map(async (p) => {
+        // Get last message from this conversation
+        const { data: messages } = await supabase
+          .from('messages')
+          .select('id, content, created_at, status, receiver_id')
+          .or(`and(sender_id.eq.${user.id},receiver_id.eq.${p.id}),and(sender_id.eq.${p.id},receiver_id.eq.${user.id})`)
+          .order('created_at', { ascending: false })
+          .limit(1);
 
-      const friendship = (friendships || []).find(f =>
-        (f.user_id === user.id && f.friend_id === p.id) || (f.user_id === p.id && f.friend_id === user.id)
-      );
+        // Get unread count
+        const { count: unreadCount } = await supabase
+          .from('messages')
+          .select('id', { count: 'exact' })
+          .eq('sender_id', p.id)
+          .eq('receiver_id', user.id)
+          .eq('status', 'sent');
 
-      return {
-        friendId: p.id,
-        full_name: p.full_name,
-        avatar_url: p.avatar_url,
-        city: p.city,
-        lastMessage: lastMsg?.content,
-        lastTime: lastMsg?.created_at,
-        unreadCount,
-        isFriend: friendship?.status === 'accepted',
-        friendshipId: friendship?.id
-      };
+        const friendship = friendships.find(f =>
+          (f.user_id === user.id && f.friend_id === p.id) || (f.user_id === p.id && f.friend_id === user.id)
+        );
+
+        return {
+          friendId: p.id,
+          full_name: p.full_name,
+          avatar_url: p.avatar_url,
+          city: p.city,
+          lastMessage: messages?.[0]?.content || '',
+          lastTime: messages?.[0]?.created_at,
+          unreadCount: unreadCount || 0,
+          isFriend: friendship?.status === 'accepted',
+          friendshipId: friendship?.id,
+          friendshipStatus: friendship?.status
+        };
+      })
+    );
+
+    // Sort by last message time
+    conversationList.sort((a, b) => {
+      const timeA = new Date(a.lastTime || 0).getTime();
+      const timeB = new Date(b.lastTime || 0).getTime();
+      return timeB - timeA;
     });
 
     setChats(conversationList);
@@ -195,7 +221,8 @@ function MessagesContent() {
       .from('messages')
       .select('*')
       .or(`and(sender_id.eq.${user.id},receiver_id.eq.${activeChat.friendId}),and(sender_id.eq.${activeChat.friendId},receiver_id.eq.${user.id})`)
-      .order('created_at', { ascending: true });
+      .order('created_at', { ascending: true })
+      .limit(500); // Limit to last 500 messages per conversation for performance
 
     if (data) {
       setMessages(data);

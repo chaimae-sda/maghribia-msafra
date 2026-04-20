@@ -13,15 +13,13 @@ import styles from './page.module.css';
 export default function VoyagesPage() {
   const router = useRouter();
   const { user, profile } = useAuth();
-  const [trips, setTrips] = useState([]);
+  const [trips, setTrips] = useState({ agencies: [], girls: [] });
   const [loading, setLoading] = useState(true);
   const [selectedTrip, setSelectedTrip] = useState(null);
   const [showRib, setShowRib] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [bookingSuccess, setBookingSuccess] = useState(false);
   const [activeTab, setActiveTab] = useState('agencies'); // agencies, girls
-
-  // Nouvel état pour vérifier si la voyageuse a déjà réservé ce voyage
   const [hasAlreadyBooked, setHasAlreadyBooked] = useState(false);
 
   useEffect(() => {
@@ -54,19 +52,33 @@ export default function VoyagesPage() {
   }, [user, selectedTrip]);
 
   async function fetchTrips() {
-    const { data } = await supabase
+    // Fetch agencies first
+    const { data: agencyTrips } = await supabase
       .from('trips')
-      .select('*, profiles!trips_agency_id_fkey(full_name, avatar_url, city, social_links, role)')
-      .order('date', { ascending: true });
-    setTrips(data || []);
+      .select('*, profiles!trips_agency_id_fkey(full_name, avatar_url, city, role)')
+      .eq('profiles.role', 'agency')
+      .order('date', { ascending: true })
+      .limit(100);
+
+    // Fetch girls trips (non-agency, with price > 0)
+    const { data: girlsTrips } = await supabase
+      .from('trips')
+      .select('*, profiles!trips_agency_id_fkey(full_name, avatar_url, city, role)')
+      .neq('profiles.role', 'agency')
+      .gt('price', 0)
+      .order('date', { ascending: true })
+      .limit(100);
+
+    // Combine and store
+    setTrips({
+      agencies: agencyTrips || [],
+      girls: girlsTrips || []
+    });
     setLoading(false);
   }
 
-  const filteredTrips = trips.filter(t => {
-    const isAgency = t.profiles?.role === 'agency';
-    if (activeTab === 'agencies') return isAgency;
-    return !isAgency && t.price > 0; // Voyages entre filles (cost-sharing)
-  });
+  // Filtered trips based on active tab
+  const filteredTrips = activeTab === 'agencies' ? (trips.agencies || []) : (trips.girls || []);
 
   const monthNames = ['Jan', 'Fév', 'Mar', 'Avr', 'Mai', 'Jun', 'Jul', 'Aoû', 'Sep', 'Oct', 'Nov', 'Déc'];
 

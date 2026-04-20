@@ -19,13 +19,15 @@ export default function SortiesPage() {
   }, []);
 
   async function fetchSorties() {
-    // Only free community outings
+    // Only free community outings - filter in database for efficiency
     const { data } = await supabase
       .from('trips')
       .select('*, profiles!trips_agency_id_fkey(full_name, avatar_url, city, role)')
       .eq('price', 0)
-      .order('date', { ascending: true });
-    setSorties(data?.filter(t => t.profiles?.role !== 'agency') || []);
+      .neq('profiles.role', 'agency')
+      .order('date', { ascending: true })
+      .limit(100);
+    setSorties(data || []);
     setLoading(false);
   }
 
